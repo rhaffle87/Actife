@@ -1,4 +1,69 @@
-pandas
+# --- Core Scientific & Numeric Libraries ---
 numpy
+scipy
+pandas
 matplotlib
+seaborn
 scikit-learn
+
+# --- Deep Learning Frameworks ---
+torch
+torchvision
+torchaudio
+tensorflow
+keras
+
+# --- Data Handling & Preprocessing ---
+opencv-python
+Pillow
+imageio
+h5py
+joblib
+
+# --- Natural Language Processing (NLP) ---
+nltk
+spacy
+transformers
+sentencepiece
+textblob
+
+# --- Data Visualization & Dashboards ---
+plotly
+bokeh
+altair
+
+# --- Jupyter & Interactive Tools ---
+jupyter
+notebook
+ipython
+ipywidgets
+
+# --- Model Deployment & APIs ---
+fastapi
+uvicorn
+flask
+streamlit
+gradio
+
+# --- Utilities & Performance ---
+tqdm
+psutil
+requests
+pyyaml
+protobuf
+numba
+
+# --- Data Engineering / Big Data (optional) ---
+dask
+pyspark
+
+# --- Evaluation & Experiment Tracking ---
+mlflow
+tensorboard
+
+# --- Optional: AutoML / Explainability ---
+xgboost
+lightgbm
+catboost
+shap
+lime
