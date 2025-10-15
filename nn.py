@@ -5,7 +5,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 
 # 1️⃣ Generate Toy Dataset
-torch.manual_seed(69)
+torch.manual_seed(42)
 x = torch.randn(1000, 3) * 5  # (x1, x2, x3)
 
 # 2️⃣ Weight yang diberikan
