@@ -90,9 +90,14 @@ const ImageProcessing = () => {
     // Get image data
     const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
     const data = imageData.data;
+    const width = canvas.width;
+    const height = canvas.height;
+
+    let processedData = new Uint8ClampedArray(data);
 
     if (currentMode === 'dct') {
-      // Convert to grayscale for DCT demo
+      // DCT Transform (JPEG-like): Converts to grayscale and applies DCT compression
+      // This demonstrates JPEG compression by transforming 8x8 blocks using DCT
       const grayscale = new Uint8ClampedArray(data.length / 4);
       for (let i = 0; i < data.length; i += 4) {
         grayscale[i / 4] = Math.round(0.299 * data[i] + 0.587 * data[i + 1] + 0.114 * data[i + 2]);
@@ -102,14 +107,14 @@ const ImageProcessing = () => {
       const qMatrix = getQuantizationMatrix(quality);
       const processed = new Uint8ClampedArray(grayscale.length);
 
-      for (let by = 0; by < Math.floor(canvas.height / 8); by++) {
-        for (let bx = 0; bx < Math.floor(canvas.width / 8); bx++) {
+      for (let by = 0; by < Math.floor(height / 8); by++) {
+        for (let bx = 0; bx < Math.floor(width / 8); bx++) {
           const block = Array(8).fill(0).map(() => Array(8).fill(0));
 
           // Extract 8x8 block
           for (let y = 0; y < 8; y++) {
             for (let x = 0; x < 8; x++) {
-              const idx = (by * 8 + y) * canvas.width + (bx * 8 + x);
+              const idx = (by * 8 + y) * width + (bx * 8 + x);
               block[y][x] = grayscale[idx] - 128; // Center around 0
             }
           }
@@ -128,15 +133,15 @@ const ImageProcessing = () => {
           // Put back
           for (let y = 0; y < 8; y++) {
             for (let x = 0; x < 8; x++) {
-              const idx = (by * 8 + y) * canvas.width + (bx * 8 + x);
+              const idx = (by * 8 + y) * width + (bx * 8 + x);
               processed[idx] = Math.max(0, Math.min(255, idctBlock[y][x] + 128));
             }
           }
         }
       }
 
-      // Create processed image data
-      const processedData = new Uint8ClampedArray(data.length);
+      // Create processed image data (grayscale output)
+      processedData = new Uint8ClampedArray(data.length);
       for (let i = 0; i < processed.length; i++) {
         const val = processed[i];
         processedData[i * 4] = val;     // R
@@ -144,10 +149,73 @@ const ImageProcessing = () => {
         processedData[i * 4 + 2] = val; // B
         processedData[i * 4 + 3] = 255; // A
       }
+    } else if (currentMode === 'grayscale') {
+      // Grayscale: Converts color image to grayscale using luminance formula
+      // This preserves the original colors but removes color information
+      for (let i = 0; i < data.length; i += 4) {
+        const gray = Math.round(0.299 * data[i] + 0.587 * data[i + 1] + 0.114 * data[i + 2]);
+        processedData[i] = gray;     // R
+        processedData[i + 1] = gray; // G
+        processedData[i + 2] = gray; // B
+        processedData[i + 3] = data[i + 3]; // A (preserve alpha)
+      }
+    } else if (currentMode === 'edge') {
+      // Edge Detection: Uses Sobel operator to detect edges in the image
+      // This highlights areas of high contrast (edges) while removing smooth areas
 
-      const processedImageData = new ImageData(processedData, canvas.width, canvas.height);
-      ctx.putImageData(processedImageData, 0, 0);
+      // First convert to grayscale
+      const grayscale = new Uint8ClampedArray(width * height);
+      for (let i = 0; i < data.length; i += 4) {
+        const idx = i / 4;
+        grayscale[idx] = Math.round(0.299 * data[i] + 0.587 * data[i + 1] + 0.114 * data[i + 2]);
+      }
+
+      // Sobel kernels
+      const sobelX = [
+        [-1, 0, 1],
+        [-2, 0, 2],
+        [-1, 0, 1]
+      ];
+      const sobelY = [
+        [-1, -2, -1],
+        [0, 0, 0],
+        [1, 2, 1]
+      ];
+
+      const edges = new Uint8ClampedArray(width * height);
+
+      // Apply Sobel operator
+      for (let y = 1; y < height - 1; y++) {
+        for (let x = 1; x < width - 1; x++) {
+          let gx = 0, gy = 0;
+
+          // Convolve with Sobel kernels
+          for (let ky = -1; ky <= 1; ky++) {
+            for (let kx = -1; kx <= 1; kx++) {
+              const pixel = grayscale[(y + ky) * width + (x + kx)];
+              gx += pixel * sobelX[ky + 1][kx + 1];
+              gy += pixel * sobelY[ky + 1][kx + 1];
+            }
+          }
+
+          // Calculate gradient magnitude
+          const magnitude = Math.min(255, Math.sqrt(gx * gx + gy * gy));
+          edges[y * width + x] = magnitude;
+        }
+      }
+
+      // Create edge-detected image data
+      for (let i = 0; i < edges.length; i++) {
+        const val = edges[i];
+        processedData[i * 4] = val;     // R
+        processedData[i * 4 + 1] = val; // G
+        processedData[i * 4 + 2] = val; // B
+        processedData[i * 4 + 3] = 255; // A
+      }
     }
+
+    const processedImageData = new ImageData(processedData, width, height);
+    ctx.putImageData(processedImageData, 0, 0);
 
     setProcessing(false);
   };
@@ -178,7 +246,7 @@ const ImageProcessing = () => {
     if (originalImage) {
       processImage();
     }
-  }, [originalImage, quality, currentMode]);
+  }, [originalImage, quality, currentMode,processImage]);
 
   return (
     <div className="min-h-screen bg-gray-50 p-6">
@@ -289,25 +357,46 @@ const ImageProcessing = () => {
         {/* Algorithm Info */}
         <div className="mt-8 bg-white rounded-lg shadow-md p-6">
           <h2 className="text-xl font-semibold mb-4">Algorithm Details</h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             <div>
-              <h3 className="font-semibold text-gray-900 mb-2">Discrete Cosine Transform (DCT)</h3>
+              <h3 className="font-semibold text-gray-900 mb-2">DCT Transform (JPEG-like)</h3>
               <ul className="text-sm text-gray-600 space-y-1">
-                <li>• 8×8 block processing</li>
+                <li>• Converts color image to grayscale first</li>
+                <li>• 8×8 block processing for compression</li>
                 <li>• Forward DCT transformation</li>
                 <li>• Quantization with quality scaling</li>
                 <li>• Inverse DCT reconstruction</li>
+                <li>• Output: Grayscale compressed image</li>
               </ul>
             </div>
             <div>
-              <h3 className="font-semibold text-gray-900 mb-2">JPEG-like Compression</h3>
+              <h3 className="font-semibold text-gray-900 mb-2">Grayscale Mode</h3>
               <ul className="text-sm text-gray-600 space-y-1">
-                <li>• Standard quantization matrix</li>
-                <li>• Quality-based compression</li>
-                <li>• Lossy compression demonstration</li>
-                <li>• Real-time parameter adjustment</li>
+                <li>• Converts RGB to grayscale using luminance</li>
+                <li>• Formula: 0.299*R + 0.587*G + 0.114*B</li>
+                <li>• Preserves image structure</li>
+                <li>• Removes color information</li>
+                <li>• Output: Monochrome image</li>
               </ul>
             </div>
+            <div>
+              <h3 className="font-semibold text-gray-900 mb-2">Edge Detection</h3>
+              <ul className="text-sm text-gray-600 space-y-1">
+                <li>• Converts to grayscale first</li>
+                <li>• Uses Sobel operator (Gx, Gy kernels)</li>
+                <li>• Calculates gradient magnitude</li>
+                <li>• Highlights areas of high contrast</li>
+                <li>• Output: Edge map (grayscale)</li>
+              </ul>
+            </div>
+          </div>
+          <div className="mt-6 p-4 bg-blue-50 rounded-lg">
+            <h4 className="font-semibold text-blue-900 mb-2">Key Differences:</h4>
+            <ul className="text-sm text-blue-800 space-y-1">
+              <li><strong>DCT vs Original:</strong> DCT converts to grayscale and applies JPEG compression, showing lossy compression artifacts</li>
+              <li><strong>Grayscale vs Original:</strong> Grayscale removes color but preserves all spatial details and brightness variations</li>
+              <li><strong>Edge Detection vs Original:</strong> Edge detection highlights boundaries and contours, removing smooth areas and textures</li>
+            </ul>
           </div>
         </div>
       </div>

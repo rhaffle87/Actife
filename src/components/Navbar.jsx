@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Menu, X, Home, Brain, Image, Palette, BarChart3, Zap, Code, TrendingUp } from 'lucide-react';
+import { Menu, X, Home, Brain, Image, Palette, BarChart3, Zap, Code, TrendingUp, Radio } from 'lucide-react';
 
 const Navbar = ({ activeSection, setActiveSection }) => {
   const [isOpen, setIsOpen] = useState(false);
@@ -11,6 +11,7 @@ const Navbar = ({ activeSection, setActiveSection }) => {
     { id: 'linear-regression', label: 'Linear Regression', icon: TrendingUp },
     { id: 'color-science', label: 'Color Science', icon: Palette },
     { id: 'signal-processing', label: 'Signal Processing', icon: BarChart3 },
+    { id: 'loran-c', label: 'LORAN-C Simulator', icon: Radio },
     { id: 'machine-learning', label: 'Machine Learning', icon: Zap },
     { id: 'mediapipe', label: 'MediaPipe', icon: Code },
   ];

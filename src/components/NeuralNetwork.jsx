@@ -31,6 +31,11 @@ const NeuralNetwork = () => {
   const [lossHistory, setLossHistory] = useState([]);
   const [epochs, setEpochs] = useState(100);
   const [learningRate, setLearningRate] = useState(0.01);
+  const [layers, setLayers] = useState([
+    { units: 5, activation: 'relu' },
+    { units: 5, activation: 'relu' },
+    { units: 1, activation: 'sigmoid' }
+  ]);
 
   // Generate synthetic data
   const generateData = () => {
@@ -50,9 +55,13 @@ const NeuralNetwork = () => {
   // Create and train model
   const createModel = async () => {
     const model = tf.sequential();
-    model.add(tf.layers.dense({ inputShape: [3], units: 5, activation: 'relu' }));
-    model.add(tf.layers.dense({ units: 5, activation: 'relu' }));
-    model.add(tf.layers.dense({ units: 1, activation: 'sigmoid' }));
+    layers.forEach((layer, index) => {
+      if (index === 0) {
+        model.add(tf.layers.dense({ inputShape: [3], units: layer.units, activation: layer.activation }));
+      } else {
+        model.add(tf.layers.dense({ units: layer.units, activation: layer.activation }));
+      }
+    });
 
     model.compile({
       optimizer: tf.train.adam(learningRate),
@@ -111,7 +120,7 @@ const NeuralNetwork = () => {
       setModel(newModel);
     };
     initModel();
-  }, [learningRate]);
+  }, [learningRate, layers]);
 
   const lossChartData = {
     labels: lossHistory.map((_, i) => i + 1),
@@ -175,6 +184,63 @@ const NeuralNetwork = () => {
                   className="w-full"
                 />
               </div>
+              <div>
+                <h3 className="text-lg font-medium mb-2">Model Architecture</h3>
+                {layers.map((layer, index) => (
+                  <div key={index} className="flex items-center space-x-2 mb-2">
+                    <label className="text-sm font-medium text-gray-700">
+                      Layer {index + 1} ({index === layers.length - 1 ? 'Output' : 'Hidden'}):
+                    </label>
+                    <input
+                      type="number"
+                      min="1"
+                      max="100"
+                      value={layer.units}
+                      onChange={(e) => {
+                        const newLayers = [...layers];
+                        newLayers[index].units = parseInt(e.target.value);
+                        setLayers(newLayers);
+                      }}
+                      className="w-16 px-2 py-1 border rounded"
+                    />
+                    <select
+                      value={layer.activation}
+                      onChange={(e) => {
+                        const newLayers = [...layers];
+                        newLayers[index].activation = e.target.value;
+                        setLayers(newLayers);
+                      }}
+                      className="px-2 py-1 border rounded"
+                    >
+                      <option value="relu">ReLU</option>
+                      <option value="sigmoid">Sigmoid</option>
+                      <option value="tanh">Tanh</option>
+                      <option value="linear">Linear</option>
+                    </select>
+                    {layers.length > 1 && index < layers.length - 1 && (
+                      <button
+                        onClick={() => {
+                          const newLayers = layers.filter((_, i) => i !== index);
+                          setLayers(newLayers);
+                        }}
+                        className="px-2 py-1 bg-red-500 text-white rounded hover:bg-red-600"
+                      >
+                        Remove
+                      </button>
+                    )}
+                  </div>
+                ))}
+                <button
+                  onClick={() => {
+                    const newLayers = [...layers];
+                    newLayers.splice(layers.length - 1, 0, { units: 5, activation: 'relu' });
+                    setLayers(newLayers);
+                  }}
+                  className="px-4 py-2 bg-green-500 text-white rounded hover:bg-green-600"
+                >
+                  Add Hidden Layer
+                </button>
+              </div>
               <button
                 onClick={trainModel}
                 disabled={isTraining}
@@ -220,21 +286,17 @@ const NeuralNetwork = () => {
               </div>
               <p className="text-sm text-gray-600">Input</p>
             </div>
-            <div className="text-center">
-              <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mb-2">
-                <span className="text-green-600 font-semibold">5</span>
+            {layers.slice(0, -1).map((layer, index) => (
+              <div key={index} className="text-center">
+                <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mb-2">
+                  <span className="text-green-600 font-semibold">{layer.units}</span>
+                </div>
+                <p className="text-sm text-gray-600">Hidden {index + 1}</p>
               </div>
-              <p className="text-sm text-gray-600">Hidden 1</p>
-            </div>
-            <div className="text-center">
-              <div className="w-16 h-16 bg-yellow-100 rounded-full flex items-center justify-center mb-2">
-                <span className="text-yellow-600 font-semibold">5</span>
-              </div>
-              <p className="text-sm text-gray-600">Hidden 2</p>
-            </div>
+            ))}
             <div className="text-center">
               <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mb-2">
-                <span className="text-red-600 font-semibold">1</span>
+                <span className="text-red-600 font-semibold">{layers[layers.length - 1].units}</span>
               </div>
               <p className="text-sm text-gray-600">Output</p>
             </div>
