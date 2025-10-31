@@ -1,6 +1,6 @@
 import { Brain, Image, Palette, BarChart3, Zap, Code, Github, BookOpen } from 'lucide-react';
 
-const Home = () => {
+const Home = ({ setActiveSection }) => {
   const features = [
     {
       icon: Brain,
@@ -43,7 +43,7 @@ const Home = () => {
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Hero Section */}
-      <div className="bg-gradient-to-r from-blue-600 to-purple-700 text-white">
+      <div className="bg-linear-to-r from-blue-600 to-purple-700 text-white">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-24">
           <div className="text-center">
             <h1 className="text-4xl md:text-6xl font-bold mb-6">
@@ -54,12 +54,15 @@ const Home = () => {
               through interactive web interfaces
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
-              <button className="bg-white text-blue-600 px-8 py-3 rounded-lg font-semibold hover:bg-gray-100 transition-colors">
+              <button
+                onClick={() => setActiveSection('tutorials')}
+                className="bg-white text-blue-600 px-8 py-3 rounded-lg font-semibold hover:bg-gray-100 transition-colors"
+              >
                 Get Started
               </button>
-              <button className="border-2 border-white text-white px-8 py-3 rounded-lg font-semibold hover:bg-white hover:text-blue-600 transition-colors">
+              <a href="https://github.com/rhaffle87/ai_ml" target="_blank" rel="noopener noreferrer" className="border-2 border-white text-white px-8 py-3 rounded-lg font-semibold hover:bg-white hover:text-blue-600 transition-colors">
                 View on GitHub
-              </button>
+              </a>
             </div>
           </div>
         </div>
@@ -108,15 +111,15 @@ const Home = () => {
                   way to understand and interact with these technologies.
                 </p>
                 <div className="flex flex-col sm:flex-row gap-4">
-                  <a
-                    href="#neural-network"
+                  <button
+                    onClick={() => setActiveSection('tutorials')}
                     className="inline-flex items-center justify-center px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
                   >
                     <BookOpen size={20} className="mr-2" />
                     Start Learning
-                  </a>
+                  </button>
                   <a
-                    href="https://github.com"
+                    href="https://github.com/rhaffle87/ai_ml"
                     target="_blank"
                     rel="noopener noreferrer"
                     className="inline-flex items-center justify-center px-6 py-3 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"
@@ -139,7 +142,7 @@ const Home = () => {
                   </div>
                   <div className="flex items-center">
                     <div className="w-3 h-3 bg-purple-500 rounded-full mr-3"></div>
-                    <span className="text-gray-700">Math.js for mathematical computations</span>
+                    <span className="text-gray-700">Math.js for math computations</span>
                   </div>
                   <div className="flex items-center">
                     <div className="w-3 h-3 bg-orange-500 rounded-full mr-3"></div>

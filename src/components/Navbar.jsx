@@ -1,19 +1,19 @@
 import { useState } from 'react';
-import { Menu, X, Home, Brain, Image, Palette, BarChart3, Zap, Code, TrendingUp, Radio } from 'lucide-react';
+import { Menu, X, Home, ChevronDown, User } from 'lucide-react';
 
 const Navbar = ({ activeSection, setActiveSection }) => {
   const [isOpen, setIsOpen] = useState(false);
+  const [isFeaturesOpen, setIsFeaturesOpen] = useState(false);
 
-  const navItems = [
-    { id: 'home', label: 'Home', icon: Home },
-    { id: 'neural-network', label: 'Neural Networks', icon: Brain },
-    { id: 'image-processing', label: 'Image Processing', icon: Image },
-    { id: 'linear-regression', label: 'Linear Regression', icon: TrendingUp },
-    { id: 'color-science', label: 'Color Science', icon: Palette },
-    { id: 'signal-processing', label: 'Signal Processing', icon: BarChart3 },
-    { id: 'loran-c', label: 'LORAN-C Simulator', icon: Radio },
-    { id: 'machine-learning', label: 'Machine Learning', icon: Zap },
-    { id: 'mediapipe', label: 'MediaPipe', icon: Code },
+  const features = [
+    { id: 'neural-network', label: 'Neural Networks' },
+    { id: 'image-processing', label: 'Image Processing' },
+    { id: 'linear-regression', label: 'Linear Regression' },
+    { id: 'color-science', label: 'Color Science' },
+    { id: 'signal-processing', label: 'Signal Processing' },
+    { id: 'loran-c', label: 'LORAN-C Simulator' },
+    { id: 'machine-learning', label: 'Machine Learning' },
+    { id: 'mediapipe', label: 'MediaPipe' },
   ];
 
   return (
@@ -26,23 +26,77 @@ const Navbar = ({ activeSection, setActiveSection }) => {
 
           {/* Desktop Navigation */}
           <div className="hidden md:flex items-center space-x-4">
-            {navItems.map((item) => {
-              const Icon = item.icon;
-              return (
-                <button
-                  key={item.id}
-                  onClick={() => setActiveSection(item.id)}
-                  className={`flex items-center space-x-2 px-3 py-2 rounded-md text-sm font-medium transition-colors ${
-                    activeSection === item.id
-                      ? 'bg-blue-600 text-white'
-                      : 'text-gray-300 hover:bg-gray-700 hover:text-white'
-                  }`}
-                >
-                  <Icon size={16} />
-                  <span>{item.label}</span>
-                </button>
-              );
-            })}
+            <button
+              onClick={() => setActiveSection('home')}
+              className={`flex items-center space-x-2 px-3 py-2 rounded-md text-sm font-medium transition-colors ${
+                activeSection === 'home'
+                  ? 'bg-blue-600 text-white'
+                  : 'text-gray-300 hover:bg-gray-700 hover:text-white'
+              }`}
+            >
+              <Home size={16} />
+              <span>Home</span>
+            </button>
+
+            <button
+              onClick={() => setActiveSection('tutorials')}
+              className={`flex items-center space-x-2 px-3 py-2 rounded-md text-sm font-medium transition-colors ${
+                activeSection === 'tutorials'
+                  ? 'bg-blue-600 text-white'
+                  : 'text-gray-300 hover:bg-gray-700 hover:text-white'
+              }`}
+            >
+              <span>Tutorials</span>
+            </button>
+
+            {/* Features Dropdown */}
+            <div
+              className="relative"
+              onMouseEnter={() => setIsFeaturesOpen(true)}
+              onMouseLeave={() => setIsFeaturesOpen(false)}
+            >
+              <button
+                className={`flex items-center space-x-2 px-3 py-2 rounded-md text-sm font-medium transition-colors ${
+                  features.some(f => f.id === activeSection)
+                    ? 'bg-blue-600 text-white'
+                    : 'text-gray-300 hover:bg-gray-700 hover:text-white'
+                }`}
+              >
+                <span>Features</span>
+                <ChevronDown size={16} className={`transition-transform ${isFeaturesOpen ? 'rotate-180' : ''}`} />
+              </button>
+
+              {isFeaturesOpen && (
+                <div className="absolute top-full left-0 mt-1 w-56 bg-gray-800 rounded-md shadow-lg z-50">
+                  {features.map((feature) => (
+                    <button
+                      key={feature.id}
+                      onClick={() => {
+                        setActiveSection(feature.id);
+                        setIsFeaturesOpen(false);
+                      }}
+                      className={`w-full text-left px-4 py-2 text-sm hover:bg-gray-700 transition-colors ${
+                        activeSection === feature.id ? 'bg-blue-600 text-white' : 'text-gray-300'
+                      }`}
+                    >
+                      {feature.label}
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            <button
+              onClick={() => setActiveSection('credits')}
+              className={`flex items-center space-x-2 px-3 py-2 rounded-md text-sm font-medium transition-colors ${
+                activeSection === 'credits'
+                  ? 'bg-blue-600 text-white'
+                  : 'text-gray-300 hover:bg-gray-700 hover:text-white'
+              }`}
+            >
+              <User size={16} />
+              <span>Credits</span>
+            </button>
           </div>
 
           {/* Mobile menu button */}
@@ -60,26 +114,70 @@ const Navbar = ({ activeSection, setActiveSection }) => {
         {isOpen && (
           <div className="md:hidden">
             <div className="px-2 pt-2 pb-3 space-y-1 sm:px-3">
-              {navItems.map((item) => {
-                const Icon = item.icon;
-                return (
+              <button
+                onClick={() => {
+                  setActiveSection('home');
+                  setIsOpen(false);
+                }}
+                className={`flex items-center space-x-2 w-full text-left px-3 py-2 rounded-md text-base font-medium transition-colors ${
+                  activeSection === 'home'
+                    ? 'bg-blue-600 text-white'
+                    : 'text-gray-300 hover:bg-gray-700 hover:text-white'
+                }`}
+              >
+                <Home size={16} />
+                <span>Home</span>
+              </button>
+
+              <button
+                onClick={() => {
+                  setActiveSection('tutorials');
+                  setIsOpen(false);
+                }}
+                className={`flex items-center space-x-2 w-full text-left px-3 py-2 rounded-md text-base font-medium transition-colors ${
+                  activeSection === 'tutorials'
+                    ? 'bg-blue-600 text-white'
+                    : 'text-gray-300 hover:bg-gray-700 hover:text-white'
+                }`}
+              >
+                <span>Tutorials</span>
+              </button>
+
+              {/* Mobile Features Section */}
+              <div className="space-y-1">
+                <div className="px-3 py-2 text-sm font-medium text-gray-400">Features</div>
+                {features.map((feature) => (
                   <button
-                    key={item.id}
+                    key={feature.id}
                     onClick={() => {
-                      setActiveSection(item.id);
+                      setActiveSection(feature.id);
                       setIsOpen(false);
                     }}
-                    className={`flex items-center space-x-2 w-full text-left px-3 py-2 rounded-md text-base font-medium transition-colors ${
-                      activeSection === item.id
+                    className={`flex items-center space-x-2 w-full text-left px-6 py-2 rounded-md text-base font-medium transition-colors ${
+                      activeSection === feature.id
                         ? 'bg-blue-600 text-white'
                         : 'text-gray-300 hover:bg-gray-700 hover:text-white'
                     }`}
                   >
-                    <Icon size={16} />
-                    <span>{item.label}</span>
+                    <span>{feature.label}</span>
                   </button>
-                );
-              })}
+                ))}
+              </div>
+
+              <button
+                onClick={() => {
+                  setActiveSection('credits');
+                  setIsOpen(false);
+                }}
+                className={`flex items-center space-x-2 w-full text-left px-3 py-2 rounded-md text-base font-medium transition-colors ${
+                  activeSection === 'credits'
+                    ? 'bg-blue-600 text-white'
+                    : 'text-gray-300 hover:bg-gray-700 hover:text-white'
+                }`}
+              >
+                <User size={16} />
+                <span>Credits</span>
+              </button>
             </div>
           </div>
         )}
