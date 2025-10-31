@@ -9,193 +9,317 @@ const DEFAULT_FREQ = 100000; // 100 kHz
 
 // ---- WebWorker (with marching squares contour extraction for accurate hyperbolas) ----
 const workerSource = `
-/* Worker: compute TDOA grid and extract contour lines by marching squares */
-self.addEventListener('message', function(e) {
-  const { cmd, data } = e.data;
-  if (cmd !== 'computeGrid') return;
-  const { gridBounds, nx, ny, masters, slaves, receivers, freq, levelsMeters } = data;
-  const dx = (gridBounds.maxX - gridBounds.minX) / (nx - 1);
-  const dy = (gridBounds.maxY - gridBounds.minY) / (ny - 1);
-  const c = 299792458;
+/* Improved Worker: compute TDOA grid + marching squares contours (optimized) */
+(function(){
+  const C = 299792458;
 
-  // compute value grid for each (master,slave) pair: value = d_slave - d_master (meters)
-  const tdoaMaps = [];
+  // Edge indices: 0=bottom (between v00-v10), 1=right (v10-v11), 2=top (v11-v01), 3=left (v01-v00)
+  const EDGE_PAIRS_BY_CASE = {
+    1: [[0,3]],
+    2: [[0,1]],
+    3: [[1,3]],
+    4: [[1,2]],
+    5: [[0,1],[2,3]], // ambiguous
+    6: [[0,2]],
+    7: [[2,3]],
+    8: [[2,3]],
+    9: [[0,2]],
+    10: [[0,3],[1,2]], // ambiguous
+    11: [[1,2]],
+    12: [[1,3]],
+    13: [[0,1]],
+    14: [[0,3]],
+  };
 
-  // helper to read/write Float32Array
-  function createGrid() { return new Float32Array(nx * ny); }
+  let cancelled = false;
+  self.addEventListener('message', function(e){
+    const data = e.data || {};
+    if (data && data.cmd === 'cancel') { cancelled = true; return; }
+    if (!data || data.cmd !== 'computeGrid') return;
+    cancelled = false;
 
-  for (let mi = 0; mi < masters.length; mi++) {
-    for (let si = 0; si < slaves.length; si++) {
-      const m = masters[mi];
-      const s = slaves[si];
-      const grid = createGrid();
-      for (let j = 0; j < ny; j++) {
-        const y = gridBounds.minY + j * dy;
-        for (let i = 0; i < nx; i++) {
-          const x = gridBounds.minX + i * dx;
-          const idx = j * nx + i;
-          const dM = Math.hypot(x - m.x, y - m.y);
-          const dS = Math.hypot(x - s.x, y - s.y);
-          grid[idx] = dS - dM;
+    try {
+      const payload = data.data;
+      const {
+        gridBounds, nx, ny,
+        masters = [], slaves = [], receivers = [],
+        freq = 100000, levelsMeters
+      } = payload || {};
+
+      // Basic validation
+      if (!gridBounds || typeof nx !== 'number' || typeof ny !== 'number') {
+        self.postMessage({ cmd: 'error', message: 'invalid grid parameters' });
+        return;
+      }
+      if (!Array.isArray(masters) || !Array.isArray(slaves)) {
+        self.postMessage({ cmd: 'error', message: 'masters/slaves must be arrays' });
+        return;
+      }
+      const dx = (gridBounds.maxX - gridBounds.minX) / (nx - 1);
+      const dy = (gridBounds.maxY - gridBounds.minY) / (ny - 1);
+
+      // Precompute x and y coordinates for the grid (avoid recomputing in loops)
+      const xs = new Float64Array(nx);
+      const ys = new Float64Array(ny);
+      for (let i = 0; i < nx; i++) xs[i] = gridBounds.minX + i * dx;
+      for (let j = 0; j < ny; j++) ys[j] = gridBounds.minY + j * dy;
+
+      // Helper: interpolation between two points (x1,y1,v1) - (x2,y2,v2) at level
+      function interp(x1,y1,v1,x2,y2,v2, level) {
+        const denom = v2 - v1;
+        const t = Math.abs(denom) < 1e-12 ? 0.5 : ((level - v1) / denom);
+        return [ x1 + t * (x2 - x1), y1 + t * (y2 - y1) ];
+      }
+
+      // Compute TDOA grids (Float32) for each master/slave pair
+      const tdoaMaps = [];
+      for (let mi = 0; mi < masters.length; mi++) {
+        if (cancelled) break;
+        const m = masters[mi];
+        for (let si = 0; si < slaves.length; si++) {
+          if (cancelled) break;
+          const s = slaves[si];
+          const grid = new Float32Array(nx * ny);
+          let idx = 0;
+          for (let j = 0; j < ny; j++) {
+            const y = ys[j];
+            for (let i = 0; i < nx; i++, idx++) {
+              const x = xs[i];
+              const dM = Math.hypot(x - m.x, y - m.y);
+              const dS = Math.hypot(x - s.x, y - s.y);
+              grid[idx] = dS - dM;
+            }
+          }
+          tdoaMaps.push({
+            masterIndex: mi,
+            slaveIndex: si,
+            nx, ny,
+            gridBounds,
+            data: grid.buffer
+          });
         }
       }
-      tdoaMaps.push({ masterIndex: mi, slaveIndex: si, nx, ny, gridBounds, data: grid.buffer });
-    }
-  }
 
-  // Marching squares: builds polylines for each map & level
-  function extractContours(gridFloat32, level) {
-    // For each cell, check corners a,b,c,d (lower-left, lower-right, upper-right, upper-left)
-    const segments = [];
-    const get = (i, j) => gridFloat32[j * nx + i];
-    const interp = (x1, y1, v1, x2, y2, v2) => {
-      const t = (level - v1) / (v2 - v1 || 1e-12);
-      return [x1 + t * (x2 - x1), y1 + t * (y2 - y1)];
-    };
-
-    for (let j = 0; j < ny - 1; j++) {
-      for (let i = 0; i < nx - 1; i++) {
-        const x0 = gridBounds.minX + i * ((gridBounds.maxX - gridBounds.minX)/(nx-1));
-        const y0 = gridBounds.minY + j * ((gridBounds.maxY - gridBounds.minY)/(ny-1));
-        const x1 = gridBounds.minX + (i+1) * ((gridBounds.maxX - gridBounds.minX)/(nx-1));
-        const y1 = gridBounds.minY + (j+1) * ((gridBounds.maxY - gridBounds.minY)/(ny-1));
-
-        const v00 = get(i, j);     // lower-left
-        const v10 = get(i+1, j);   // lower-right
-        const v11 = get(i+1, j+1); // upper-right
-        const v01 = get(i, j+1);   // upper-left
-
-        // case index (0-15)
-        let idx = 0;
-        if (v00 >= level) idx |= 1;
-        if (v10 >= level) idx |= 2;
-        if (v11 >= level) idx |= 4;
-        if (v01 >= level) idx |= 8;
-
-        // edge interpolation points for 12 possible edges; handle 16 cases
-        // We'll only add segments for non-trivial cases (1..14)
-        switch (idx) {
-          case 0: case 15:
-            break;
-          case 1:
-          case 14: {
-            const p1 = interp(x0, y0, v00, x1, y0, v10); // bottom
-            const p2 = interp(x0, y0, v00, x0, y1, v01); // left
-            segments.push([p1, p2]); break;
-          }
-          case 2:
-          case 13: {
-            const p1 = interp(x1, y0, v10, x1, y1, v11); // right
-            const p2 = interp(x0, y0, v00, x1, y0, v10); // bottom
-            segments.push([p1, p2]); break;
-          }
-          case 3:
-          case 12: {
-            const p1 = interp(x1, y0, v10, x1, y1, v11); // right
-            const p2 = interp(x0, y0, v00, x0, y1, v01); // left
-            segments.push([p1, p2]); break;
-          }
-          case 4:
-          case 11: {
-            const p1 = interp(x1, y1, v11, x0, y1, v01); // top
-            const p2 = interp(x1, y0, v10, x1, y1, v11); // right
-            segments.push([p1, p2]); break;
-          }
-          case 5:
-          case 10: {
-            // ambiguous: two segments (use both)
-            const a1 = interp(x0, y0, v00, x1, y0, v10); // bottom
-            const a2 = interp(x1, y1, v11, x0, y1, v01); // top
-            const b1 = interp(x0, y0, v00, x0, y1, v01); // left
-            const b2 = interp(x1, y0, v10, x1, y1, v11); // right
-            segments.push([a1, b1]);
-            segments.push([a2, b2]);
-            break;
-          }
-          case 6:
-          case 9: {
-            const p1 = interp(x0, y0, v00, x1, y0, v10); // bottom
-            const p2 = interp(x1, y1, v11, x0, y1, v01); // top
-            segments.push([p1, p2]); break;
-          }
-          case 7:
-          case 8: {
-            const p1 = interp(x0, y0, v00, x0, y1, v01); // left
-            const p2 = interp(x1, y1, v11, x0, y1, v01); // top
-            segments.push([p1, p2]); break;
-          }
-          default: break;
-        }
+      if (cancelled) {
+        self.postMessage({ cmd: 'cancelled' });
+        return;
       }
-    }
 
-    // Join segments into polylines
-    const EPS = Math.max((gridBounds.maxX-gridBounds.minX)/(nx-1),(gridBounds.maxY-gridBounds.minY)/(ny-1)) * 0.5;
-    const polylines = [];
-    const used = new Array(segments.length).fill(false);
+      // Default levels if not provided
+      const levels = (Array.isArray(levelsMeters) && levelsMeters.length) ?
+        levelsMeters.slice() : [-5000, -3000, -1000, 0, 1000, 3000, 5000];
 
-    function dist2(a,b){ const dx=a[0]-b[0], dy=a[1]-b[1]; return dx*dx+dy*dy; }
+      // Marching squares contour extraction optimized
+      function extractContoursFromFloat32(gridFloat32, nx_, ny_, bounds, levelsArr) {
+        const contoursOut = [];
+        const gridNx = nx_, gridNy = ny_;
+        const cellDx = (bounds.maxX - bounds.minX) / (gridNx - 1);
+        const cellDy = (bounds.maxY - bounds.minY) / (gridNy - 1);
+        const eps = Math.max(cellDx, cellDy) * 0.5;
+        const quant = eps * 0.5; // quantization tolerance for endpoint hashing
 
-    for (let sidx = 0; sidx < segments.length; sidx++) {
-      if (used[sidx]) continue;
-      let seg = segments[sidx];
-      used[sidx] = true;
-      let poly = [seg[0], seg[1]];
+        // quick access
+        const get = (i, j) => gridFloat32[j * gridNx + i];
 
-      let extended = true;
-      while (extended) {
-        extended = false;
-        // try extend at end
-        for (let k = 0; k < segments.length; k++) {
-          if (used[k]) continue;
-          const [a,b] = segments[k];
-          if (Math.sqrt(dist2(poly[poly.length-1], a)) < EPS) {
-            poly.push(b); used[k]=true; extended=true; break;
-          } else if (Math.sqrt(dist2(poly[poly.length-1], b)) < EPS) {
-            poly.push(a); used[k]=true; extended=true; break;
-          } else if (Math.sqrt(dist2(poly[0], a)) < EPS) {
-            poly.unshift(b); used[k]=true; extended=true; break;
-          } else if (Math.sqrt(dist2(poly[0], b)) < EPS) {
-            poly.unshift(a); used[k]=true; extended=true; break;
+        for (const level of levelsArr) {
+          if (cancelled) break;
+          // segments as flat arrays of 4 numbers [x1,y1,x2,y2]
+          const segments = [];
+
+          // iterate cells
+          for (let j = 0; j < gridNy - 1; j++) {
+            const y0 = bounds.minY + j * cellDy;
+            const y1 = bounds.minY + (j + 1) * cellDy;
+            for (let i = 0; i < gridNx - 1; i++) {
+              const x0 = bounds.minX + i * cellDx;
+              const x1 = bounds.minX + (i + 1) * cellDx;
+
+              const v00 = get(i, j);     // lower-left
+              const v10 = get(i+1, j);   // lower-right
+              const v11 = get(i+1, j+1); // upper-right
+              const v01 = get(i, j+1);   // upper-left
+
+              let idxCase = 0;
+              if (v00 >= level) idxCase |= 1;
+              if (v10 >= level) idxCase |= 2;
+              if (v11 >= level) idxCase |= 4;
+              if (v01 >= level) idxCase |= 8;
+
+              if (idxCase === 0 || idxCase === 15) continue;
+
+              const edgePairs = EDGE_PAIRS_BY_CASE[idxCase];
+              if (!edgePairs) continue;
+
+              // For ambiguous cases (5,10) use center value to decide (classic disambiguation)
+              let resolvedPairs = edgePairs;
+              if ((idxCase === 5 || idxCase === 10) && edgePairs.length === 2) {
+                const center = (v00 + v10 + v11 + v01) * 0.25;
+                // if center >= level, connect diagonally one way, else the other
+                if (center >= level) {
+                  resolvedPairs = (idxCase === 5) ? [[0,1]] : [[0,3]];
+                } else {
+                  resolvedPairs = (idxCase === 5) ? [[2,3]] : [[1,2]];
+                }
+              }
+
+              // compute intersection points for required edges
+              // bottom edge between (x0,y0) v00 and (x1,y0) v10  => edge 0
+              // right edge between (x1,y0) v10 and (x1,y1) v11   => edge 1
+              // top edge between (x1,y1) v11 and (x0,y1) v01     => edge 2
+              // left edge between (x0,y1) v01 and (x0,y0) v00    => edge 3
+              const edgePoint = new Array(4);
+              function computeEdgePoint(e) {
+                if (edgePoint[e]) return edgePoint[e];
+                switch (e) {
+                  case 0: return edgePoint[0] = interp(x0,y0,v00,x1,y0,v10, level);
+                  case 1: return edgePoint[1] = interp(x1,y0,v10,x1,y1,v11, level);
+                  case 2: return edgePoint[2] = interp(x1,y1,v11,x0,y1,v01, level);
+                  case 3: return edgePoint[3] = interp(x0,y1,v01,x0,y0,v00, level);
+                }
+              }
+
+              for (const pair of resolvedPairs) {
+                const pA = computeEdgePoint(pair[0]);
+                const pB = computeEdgePoint(pair[1]);
+                segments.push([pA[0], pA[1], pB[0], pB[1]]);
+              }
+            }
+          } // end cells
+
+          if (segments.length === 0) continue;
+
+          // Build endpoint map to join segments quickly (quantize endpoints into string keys)
+          const endpointMap = new Map(); // key -> array of segment indices and side (0=start,1=end)
+          function keyFor(x, y) {
+            const qx = Math.round(x / quant);
+            const qy = Math.round(y / quant);
+            return qx + ':' + qy;
           }
-        }
+
+          for (let si = 0; si < segments.length; si++) {
+            const s = segments[si];
+            const k1 = keyFor(s[0], s[1]);
+            const k2 = keyFor(s[2], s[3]);
+            if (!endpointMap.has(k1)) endpointMap.set(k1, []);
+            endpointMap.get(k1).push([si, 0]);
+            if (!endpointMap.has(k2)) endpointMap.set(k2, []);
+            endpointMap.get(k2).push([si, 1]);
+          }
+
+          const used = new Uint8Array(segments.length);
+          const polylines = [];
+
+          // Helper to get other endpoint of segment
+          function otherPointOfSegment(segIdx, side) {
+            const s = segments[segIdx];
+            if (side === 0) return [s[2], s[3]]; // if we are at start, other is end
+            return [s[0], s[1]];
+          }
+
+          // Iterate segments, start from endpoints with degree 1 first (open polylines), then close loops
+          const degrees = new Map();
+          for (const [k, arr] of endpointMap) degrees.set(k, arr.length);
+
+          function walkFrom(segIdx, fromSide) {
+            const poly = [];
+            let curSeg = segIdx;
+            let curSide = fromSide; // 0 means we're at segment start, 1 at segment end
+            // push starting point (the point at curSide)
+            const s = segments[curSeg];
+            const startPt = curSide === 0 ? [s[0], s[1]] : [s[2], s[3]];
+            poly.push(startPt);
+
+            while (curSeg !== null && !used[curSeg]) {
+              used[curSeg] = 1;
+              const s2 = segments[curSeg];
+              const nextPt = curSide === 0 ? [s2[2], s2[3]] : [s2[0], s2[1]];
+              poly.push(nextPt);
+
+              // find next segment connected to nextPt (excluding current segment)
+              const k = keyFor(nextPt[0], nextPt[1]);
+              const candidates = endpointMap.get(k) || [];
+              let nextPair = null;
+              for (const [si, side] of candidates) {
+                if (si === curSeg) continue;
+                if (!used[si]) { nextPair = [si, side]; break; }
+              }
+              if (!nextPair) {
+                // no continuation
+                curSeg = null;
+                break;
+              } else {
+                curSeg = nextPair[0];
+                // if nextPair.side === 0 the current endpoint matches that segment's start, so we arrived at side 0; to move forward we need to flip side
+                curSide = nextPair[1];
+                // arrival side indicates which endpoint matched; to move along that segment we should then traverse from that side.
+                // continue loop
+              }
+            }
+            return poly;
+          }
+
+          // First, walk from endpoints with degree 1 to form open polylines
+          for (const [k, deg] of degrees) {
+            if (deg !== 1) continue;
+            const arr = endpointMap.get(k) || [];
+            for (const [si, side] of arr) {
+              if (used[si]) continue;
+              const poly = walkFrom(si, side);
+              if (poly.length > 1) polylines.push(poly);
+            }
+          }
+
+          // Then walk any remaining segments (closed loops)
+          for (let si = 0; si < segments.length; si++) {
+            if (used[si]) continue;
+            const poly = walkFrom(si, 0);
+            if (poly.length > 1) polylines.push(poly);
+          }
+
+          // Save polylines as contour objects (points arrays)
+          for (const poly of polylines) {
+            // poly is array of [x,y] points
+            contoursOut.push({ levelMeters: level, levelSeconds: level / C, points: poly });
+          }
+        } // end levels
+
+        return contoursOut;
       }
-      polylines.push(poly);
-    }
 
-    return polylines;
-  }
-
-  // Build contours for requested levels across every tdoaMap
-  const contours = [];
-  const levels = levelsMeters && levelsMeters.length ? levelsMeters : (function(){
-    // auto-levels: choose based on grid extents (± range / 12)
-    const sampleGrid = new Float32Array(nx*ny);
-    return [-5000,-3000,-1000,0,1000,3000,5000];
-  })();
-
-  // iterate maps
-  tdoaMaps.forEach((m) => {
-    const grid = new Float32Array(m.data);
-    for (const level of levels) {
-      const polylines = extractContours(grid, level);
-      polylines.forEach((poly) => {
-        // poly: array of [x,y] in meters (WebMercator)
-        contours.push({
-          masterIndex: m.masterIndex,
-          slaveIndex: m.slaveIndex,
-          levelMeters: level,
-          levelSeconds: level / c,
-          points: poly
+      // Build contours across each tdoaMap
+      const contours = [];
+      for (const m of tdoaMaps) {
+        if (cancelled) break;
+        const grid = new Float32Array(m.data);
+        const polyContours = extractContoursFromFloat32(grid, m.nx, m.ny, m.gridBounds, levels);
+        // attach indices for consumer
+        polyContours.forEach(pc => {
+          contours.push({
+            masterIndex: m.masterIndex,
+            slaveIndex: m.slaveIndex,
+            levelMeters: pc.levelMeters,
+            levelSeconds: pc.levelSeconds,
+            points: pc.points
+          });
         });
-      });
+      }
+
+      if (cancelled) {
+        self.postMessage({ cmd: 'cancelled' });
+        return;
+      }
+
+      // Post result with transferable grid buffers to avoid copy
+      const transferList = tdoaMaps.map(t => t.data);
+      self.postMessage({ cmd: 'gridResult', tdoaMaps, contours, receivers }, transferList);
+
+    } catch (err) {
+      self.postMessage({ cmd: 'error', message: String(err), stack: err && err.stack });
     }
   });
-
-  // include receivers positions (meters) so consumer can connect/verify intersections
-  self.postMessage({ cmd: 'gridResult', tdoaMaps, contours, receivers }, tdoaMaps.map(t => t.data));
-});
+})();  
 `;
+
 
 // createWorker helper
 function createWorker() {
@@ -279,6 +403,7 @@ export default function LoranOfflineSimulator({ tileUrlTemplate = TILE_URL_TEMPL
   const [simulationResults, setSimulationResults] = useState(null);
   const markers = useRef({});
 
+  // --- Marker creation ---
   const addMarker = useCallback((point, label, type) => {
     const el = document.createElement('div');
     el.className = `marker marker-${type}`;
@@ -289,17 +414,21 @@ export default function LoranOfflineSimulator({ tileUrlTemplate = TILE_URL_TEMPL
     if (type === 'master') el.style.background = '#1e90ff';
     if (type === 'slave') el.style.background = '#f59e0b';
     if (type === 'receiver') el.style.background = '#10b981';
+
     const marker = new maplibregl.Marker({ element: el, draggable: true })
       .setLngLat([point.lng, point.lat])
       .addTo(mapRef.current);
+      
     marker.on('dragend', ()=>{
       const lnglat = marker.getLngLat();
       if (type === 'master') setMasters(prev=> prev.map(p=> p.label===label ? {...p, lat: lnglat.lat, lng: lnglat.lng} : p));
       if (type === 'slave') setSlaves(prev=> prev.map(p=> p.label===label ? {...p, lat: lnglat.lat, lng: lnglat.lng} : p));
       if (type === 'receiver') setReceivers(prev=> prev.map(p=> p.label===label ? {...p, lat: lnglat.lat, lng: lnglat.lng} : p));
     });
+
     markers.current[label] = marker;
   }, [setMasters, setSlaves, setReceivers]);
+
 
   const addMaster = useCallback((point) => {
     const m = { ...point, txDbm: 20, gri: 8330, label: `M${masters.length+1}` };
@@ -349,6 +478,8 @@ export default function LoranOfflineSimulator({ tileUrlTemplate = TILE_URL_TEMPL
         else if (modeRef.current === 'add-slave') addSlave({ lat: lnglat.lat, lng: lnglat.lng });
         else if (modeRef.current === 'add-receiver') addReceiver({ lat: lnglat.lat, lng: lnglat.lng });
       });
+      // Draw baselines initially if stations exist
+      drawBaselines();
     });
 
     const keyHandler = (ev) => {
@@ -368,6 +499,7 @@ export default function LoranOfflineSimulator({ tileUrlTemplate = TILE_URL_TEMPL
         }));
         setGridStatus({ computedAt: Date.now(), maps, contours, receivers: rcvrs });
         drawLOPs(contours);
+        drawBaselines();
       }
     });
 
@@ -442,6 +574,63 @@ export default function LoranOfflineSimulator({ tileUrlTemplate = TILE_URL_TEMPL
       type: 'line',
       source: 'lops',
       paint: { 'line-color': '#ff0044', 'line-width': 2, 'line-opacity': 0.9 }
+    });
+  }
+
+  function drawBaselines() {
+    if (!mapRef.current) return;
+
+    // Remove old baseline layer if exists
+    if (mapRef.current.getLayer('baselines')) mapRef.current.removeLayer('baselines');
+    if (mapRef.current.getSource('baselines')) mapRef.current.removeSource('baselines');
+
+    if (masters.length === 0 || slaves.length === 0) return;
+
+    const features = [];
+    const master = masters[0]; // assuming single reference master
+    const [lngM, latM] = [master.lng, master.lat];
+
+    slaves.forEach((s, idx) => {
+      const [lngS, latS] = [s.lng, s.lat];
+      features.push({
+        type: 'Feature',
+        geometry: {
+          type: 'LineString',
+          coordinates: [
+            [lngM, latM],
+            [lngS, latS],
+          ],
+        },
+        properties: {
+          id: `baseline-${idx + 1}`,
+          type: 'baseline',
+          masterLabel: master.label,
+          slaveLabel: s.label,
+          index: idx,
+        },
+      });
+    });
+
+    const geojson = {
+      type: 'FeatureCollection',
+      features,
+    };
+
+    mapRef.current.addSource('baselines', { type: 'geojson', data: geojson });
+    mapRef.current.addLayer({
+      id: 'baselines',
+      type: 'line',
+      source: 'baselines',
+      paint: {
+        'line-color': '#888',
+        'line-width': 2,
+        'line-opacity': 0.5,
+        'line-dasharray': [2, 2], // dashed
+      },
+      layout: {
+        'line-cap': 'round',
+        'line-join': 'round',
+      },
     });
   }
 

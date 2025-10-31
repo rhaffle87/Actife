@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect, useCallback } from 'react';
 import { Upload, Image as ImageIcon, Download, RotateCcw } from 'lucide-react';
 
 const ImageProcessing = () => {
@@ -73,7 +73,7 @@ const ImageProcessing = () => {
     );
   };
 
-  const processImage = async () => {
+  const processImage = useCallback(async () => {
     if (!originalImage) return;
 
     setProcessing(true);
@@ -218,7 +218,7 @@ const ImageProcessing = () => {
     ctx.putImageData(processedImageData, 0, 0);
 
     setProcessing(false);
-  };
+  }, [originalImage, quality, currentMode]);
 
   const handleFileUpload = (event) => {
     const file = event.target.files[0];
@@ -246,7 +246,7 @@ const ImageProcessing = () => {
     if (originalImage) {
       processImage();
     }
-  }, [originalImage, quality, currentMode,processImage]);
+  }, [originalImage, quality, currentMode, processImage]);
 
   return (
     <div className="min-h-screen bg-gray-50 p-6">
