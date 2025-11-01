@@ -402,23 +402,40 @@ export default function LoranOfflineSimulator({ tileUrlTemplate = TILE_URL_TEMPL
   const [gridStatus, setGridStatus] = useState(null);
   const [simulationResults, setSimulationResults] = useState(null);
   const markers = useRef({});
+  const masterCounter = useRef(0);
+  const slaveCounter = useRef(0);
+  const receiverCounter = useRef(0);
 
   // --- Marker creation ---
   const addMarker = useCallback((point, label, type) => {
     const el = document.createElement('div');
     el.className = `marker marker-${type}`;
-    el.title = label;
-    el.style.width = '18px'; el.style.height = '18px'; el.style.borderRadius = '50%';
-    el.style.display='flex'; el.style.alignItems='center'; el.style.justifyContent='center';
-    el.style.fontSize='10px'; el.style.color='white';
-    if (type === 'master') el.style.background = '#1e90ff';
-    if (type === 'slave') el.style.background = '#f59e0b';
-    if (type === 'receiver') el.style.background = '#10b981';
+    el.style.display = 'flex';
+    el.style.flexDirection = 'column';
+    el.style.alignItems = 'center';
+
+    const dot = document.createElement('div');
+    dot.style.width = '22px';
+    dot.style.height = '22px';
+    dot.style.borderRadius = '50%';
+    if (type === 'master') dot.style.background = '#1e90ff';
+    if (type === 'slave') dot.style.background = '#f59e0b';
+    if (type === 'receiver') dot.style.background = '#10b981';
+
+    const text = document.createElement('div');
+    text.innerText = label;
+    text.style.marginTop = '4px';
+    text.style.fontSize = '15px';
+    text.style.color = 'black';
+    text.style.textShadow = '0 1px 2px rgba(0,0,0,0.6)';
+
+    el.appendChild(text);
+    el.appendChild(dot);
 
     const marker = new maplibregl.Marker({ element: el, draggable: true })
       .setLngLat([point.lng, point.lat])
       .addTo(mapRef.current);
-      
+
     marker.on('dragend', ()=>{
       const lnglat = marker.getLngLat();
       if (type === 'master') setMasters(prev=> prev.map(p=> p.label===label ? {...p, lat: lnglat.lat, lng: lnglat.lng} : p));
@@ -429,24 +446,26 @@ export default function LoranOfflineSimulator({ tileUrlTemplate = TILE_URL_TEMPL
     markers.current[label] = marker;
   }, [setMasters, setSlaves, setReceivers]);
 
-
   const addMaster = useCallback((point) => {
-    const m = { ...point, txDbm: 20, gri: 8330, label: `M${masters.length+1}` };
+    masterCounter.current++;
+    const m = { ...point, txDbm: 20, gri: 8330, label: `M${masterCounter.current}` };
     setMasters(prev => [...prev, m]);
     addMarker(point, m.label, 'master');
-  }, [masters.length, setMasters, addMarker]);
+  }, [setMasters, addMarker]);
 
   const addSlave = useCallback((point) => {
-    const s = { ...point, txDbm: 18, offsetSec: 0, label: `S${slaves.length+1}` };
+    slaveCounter.current++;
+    const s = { ...point, txDbm: 18, offsetSec: 0, label: `S${slaveCounter.current}` };
     setSlaves(prev => [...prev, s]);
     addMarker(point, s.label, 'slave');
-  }, [slaves.length, setSlaves, addMarker]);
+  }, [setSlaves, addMarker]);
 
   const addReceiver = useCallback((point) => {
-    const r = { ...point, label: `R${receivers.length+1}` };
+    receiverCounter.current++;
+    const r = { ...point, label: `R${receiverCounter.current}` };
     setReceivers(prev => [...prev, r]);
     addMarker(point, r.label, 'receiver');
-  }, [receivers.length, setReceivers, addMarker]);
+  }, [setReceivers, addMarker]);
 
   useEffect(() => { modeRef.current = mode; }, [mode]);
 
@@ -508,7 +527,16 @@ export default function LoranOfflineSimulator({ tileUrlTemplate = TILE_URL_TEMPL
       if (mapRef.current) mapRef.current.remove();
       if (workerRef.current) workerRef.current.terminate();
     };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  // Separate effect to update baselines when masters or slaves change
+  useEffect(() => {
+    if (mapRef.current && mapRef.current.isStyleLoaded()) {
+      drawBaselines();
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [masters, slaves]);
 
   // ---- computeGrid: now sends explicit levels and uses worker marching squares ----
   function computeGrid(nx=300, ny=300) {
@@ -810,15 +838,15 @@ export default function LoranOfflineSimulator({ tileUrlTemplate = TILE_URL_TEMPL
           <div className="mt-4">
             <h4 className="font-medium">Stations ({masters.length} masters, {slaves.length} slaves)</h4>
             <div className="mt-2 text-xs space-y-1">
-              {masters.map((m,i)=> <div key={i}>M{i+1}: {m.lat.toFixed(5)}, {m.lng.toFixed(5)} Tx={m.txDbm} dBm</div>)}
-              {slaves.map((s,i)=> <div key={i}>S{i+1}: {s.lat.toFixed(5)}, {s.lng.toFixed(5)}</div>)}
+              {masters.map((m,i)=> <div key={i}>[M] {m.label}: {m.lat.toFixed(5)}, {m.lng.toFixed(5)} Tx={m.txDbm} dBm</div>)}
+              {slaves.map((s,i)=> <div key={i}>[S] {s.label}: {s.lat.toFixed(5)}, {s.lng.toFixed(5)}</div>)}
             </div>
           </div>
 
           <div className="mt-4">
             <h4 className="font-medium">Receivers ({receivers.length})</h4>
             <div className="mt-2 text-xs">
-              {receivers.map((r)=> <div key={r.label}>{r.label}: {r.lat.toFixed(5)}, {r.lng.toFixed(5)}</div>)}
+              {receivers.map((r)=> <div key={r.label}>[R] {r.label}: {r.lat.toFixed(5)}, {r.lng.toFixed(5)}</div>)}
             </div>
           </div>
 
@@ -833,11 +861,11 @@ export default function LoranOfflineSimulator({ tileUrlTemplate = TILE_URL_TEMPL
               <h4 className="font-medium">Pulse Simulation Results</h4>
               {simulationResults.map((result, idx) => (
                 <div key={idx} className="mt-2">
-                  <div className="text-sm font-medium">{result.receiver}</div>
+                  <div className="text-sm font-medium">[R] {result.receiver}</div>
                   <div className="text-xs mt-1">
                     {result.arrivals.map((arrival, i) => (
                       <div key={i}>
-                        {arrival.station} ({arrival.type}): {arrival.arrivalSec.toFixed(6)}s, {arrival.txDbm}dBm
+                        [{arrival.type.charAt(0).toUpperCase()}] {arrival.station}: {arrival.arrivalSec.toFixed(6)}s, {arrival.txDbm}dBm
                       </div>
                     ))}
                   </div>
@@ -860,7 +888,7 @@ export default function LoranOfflineSimulator({ tileUrlTemplate = TILE_URL_TEMPL
                       const maxVal = Math.max(...pulseWaveform) || 1;
                       return (
                         <div key={i} className="mt-1">
-                          <div className="text-xs">{arrival.station} ({arrival.type})</div>
+                          <div className="text-xs">[{arrival.type.charAt(0).toUpperCase()}] {arrival.station}</div>
                           <svg width="100%" height="40" viewBox="0 0 1000 40" className="border">
                             <polyline
                               fill="none"
