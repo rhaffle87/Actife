@@ -614,27 +614,39 @@ export default function LoranOfflineSimulator({ tileUrlTemplate = TILE_URL_TEMPL
     if (masters.length === 0 || slaves.length === 0) return;
 
     const features = [];
-    const master = masters[0]; // assuming single reference master
-    const [lngM, latM] = [master.lng, master.lat];
 
-    slaves.forEach((s, idx) => {
-      const [lngS, latS] = [s.lng, s.lat];
-      features.push({
-        type: 'Feature',
-        geometry: {
-          type: 'LineString',
-          coordinates: [
-            [lngM, latM],
-            [lngS, latS],
-          ],
-        },
-        properties: {
-          id: `baseline-${idx + 1}`,
-          type: 'baseline',
-          masterLabel: master.label,
-          slaveLabel: s.label,
-          index: idx,
-        },
+    masters.forEach((m, midx) => {
+      const [lngM, latM] = [m.lng, m.lat];
+      slaves.forEach((s, sidx) => {
+        const [lngS, latS] = [s.lng, s.lat];
+
+        // Calculate baseline extension
+        // Extend the line beyond the slave station by a factor (e.g., 0.5 means extend by 50% of the baseline length)
+        const extensionFactor = 0.5;
+        const deltaLng = lngS - lngM;
+        const deltaLat = latS - latM;
+        const extendedLng = lngS + deltaLng * extensionFactor;
+        const extendedLat = latS + deltaLat * extensionFactor;
+
+        features.push({
+          type: 'Feature',
+          geometry: {
+            type: 'LineString',
+            coordinates: [
+              [lngM, latM],
+              [lngS, latS],
+              [extendedLng, extendedLat],
+            ],
+          },
+          properties: {
+            id: `baseline-${midx}-${sidx}`,
+            type: 'baseline',
+            masterLabel: m.label,
+            slaveLabel: s.label,
+            masterIndex: midx,
+            slaveIndex: sidx,
+          },
+        });
       });
     });
 
@@ -802,6 +814,30 @@ export default function LoranOfflineSimulator({ tileUrlTemplate = TILE_URL_TEMPL
     alert(`Estimated position: ${est.lat.toFixed(6)}, ${est.lng.toFixed(6)} — Actual: ${r.lat.toFixed(6)}, ${r.lng.toFixed(6)}`);
   }
 
+  function resetSimulation() {
+    // Clear all stations
+    setMasters([]);
+    setSlaves([]);
+    setReceivers([]);
+    // Clear grid and simulation results
+    setGridStatus(null);
+    setSimulationResults(null);
+    // Reset counters
+    masterCounter.current = 0;
+    slaveCounter.current = 0;
+    receiverCounter.current = 0;
+    // Remove all markers from map
+    Object.values(markers.current).forEach(marker => marker.remove());
+    markers.current = {};
+    // Remove layers and sources
+    if (mapRef.current) {
+      if (mapRef.current.getLayer('baselines')) mapRef.current.removeLayer('baselines');
+      if (mapRef.current.getSource('baselines')) mapRef.current.removeSource('baselines');
+      if (mapRef.current.getLayer('lops')) mapRef.current.removeLayer('lops');
+      if (mapRef.current.getSource('lops')) mapRef.current.removeSource('lops');
+    }
+  }
+
   // UI render
   return (
     <div className="w-full h-full flex flex-col" style={{height: '820px'}}>
@@ -819,6 +855,7 @@ export default function LoranOfflineSimulator({ tileUrlTemplate = TILE_URL_TEMPL
           <button onClick={simulatePulsesAtReceivers} className="px-3 py-1 rounded bg-emerald-600 text-white">Simulate Pulses</button>
           <button onClick={()=>estimateReceiverLocationFromTDOA(0)} className="px-3 py-1 rounded bg-yellow-500 text-black">Estimate Rx (TDOA)</button>
           <button onClick={exportScenario} className="px-3 py-1 rounded bg-amber-400">Export GeoJSON</button>
+          <button onClick={resetSimulation} className="px-3 py-1 rounded bg-red-500 text-white">Reset Simulation</button>
         </div>
       </div>
 
