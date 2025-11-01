@@ -844,18 +844,18 @@ export default function LoranOfflineSimulator({ tileUrlTemplate = TILE_URL_TEMPL
       <div className="p-3 bg-slate-50 border-b flex items-center gap-3">
         <h2 className="text-lg font-semibold">LORAN-C Offline Simulator</h2>
         <div className="flex gap-2 ml-4">
-          <button className={`px-2 py-1 rounded ${mode==='add-master'? 'bg-sky-600 text-white':''}`} onClick={()=>setMode('add-master')}>Add Master (m)</button>
-          <button className={`px-2 py-1 rounded ${mode==='add-slave'? 'bg-amber-500 text-white':''}`} onClick={()=>setMode('add-slave')}>Add Slave (s)</button>
-          <button className={`px-2 py-1 rounded ${mode==='add-receiver'? 'bg-green-600 text-white':''}`} onClick={()=>setMode('add-receiver')}>Add Receiver (r)</button>
-          <button className={`px-2 py-1 rounded ${mode==='pan'? 'bg-gray-400 text-white':''}`} onClick={()=>setMode('pan')}>Pan (p)</button>
+          <button className={`px-2 py-1 rounded transition-all duration-200 hover:scale-105 hover:shadow-md ${mode==='add-master'? 'bg-sky-600 text-white':''}`} onClick={()=>setMode('add-master')}>Add Master (m)</button>
+          <button className={`px-2 py-1 rounded transition-all duration-200 hover:scale-105 hover:shadow-md ${mode==='add-slave'? 'bg-amber-500 text-white':''}`} onClick={()=>setMode('add-slave')}>Add Slave (s)</button>
+          <button className={`px-2 py-1 rounded transition-all duration-200 hover:scale-105 hover:shadow-md ${mode==='add-receiver'? 'bg-green-600 text-white':''}`} onClick={()=>setMode('add-receiver')}>Add Receiver (r)</button>
+          <button className={`px-2 py-1 rounded transition-all duration-200 hover:scale-105 hover:shadow-md ${mode==='pan'? 'bg-gray-400 text-white':''}`} onClick={()=>setMode('pan')}>Pan (p)</button>
         </div>
 
         <div className="ml-auto flex gap-2">
-          <button onClick={()=>computeGrid(200,200)} className="px-3 py-1 rounded bg-indigo-600 text-white">Compute Grid (WebWorker)</button>
-          <button onClick={simulatePulsesAtReceivers} className="px-3 py-1 rounded bg-emerald-600 text-white">Simulate Pulses</button>
-          <button onClick={()=>estimateReceiverLocationFromTDOA(0)} className="px-3 py-1 rounded bg-yellow-500 text-black">Estimate Rx (TDOA)</button>
-          <button onClick={exportScenario} className="px-3 py-1 rounded bg-amber-400">Export GeoJSON</button>
-          <button onClick={resetSimulation} className="px-3 py-1 rounded bg-red-500 text-white">Reset Simulation</button>
+          <button onClick={()=>computeGrid(200,200)} className="px-3 py-1 rounded bg-indigo-600 text-white transition-all duration-200 hover:scale-105 hover:shadow-md">Compute Grid (WebWorker)</button>
+          <button onClick={simulatePulsesAtReceivers} className="px-3 py-1 rounded bg-emerald-600 text-white transition-all duration-200 hover:scale-105 hover:shadow-md">Simulate Pulses</button>
+          <button onClick={()=>estimateReceiverLocationFromTDOA(0)} className="px-3 py-1 rounded bg-yellow-500 text-black transition-all duration-200 hover:scale-105 hover:shadow-md">Estimate Rx (TDOA)</button>
+          <button onClick={exportScenario} className="px-3 py-1 rounded bg-amber-400 transition-all duration-200 hover:scale-105 hover:shadow-md">Export GeoJSON</button>
+          <button onClick={resetSimulation} className="px-3 py-1 rounded bg-red-500 text-white transition-all duration-200 hover:scale-105 hover:shadow-md">Reset Simulation</button>
         </div>
       </div>
 
@@ -869,6 +869,20 @@ export default function LoranOfflineSimulator({ tileUrlTemplate = TILE_URL_TEMPL
             <div><strong>R</strong>: Receiver / user device</div>
             <div className="mt-3">Freq: {DEFAULT_FREQ/1000} kHz</div>
             <div>Speed of light c = {C.c.toLocaleString()} m/s</div>
+          </div>
+
+          <div className="mt-4">
+            <h4 className="font-medium">How to Use LORAN-C Simulator</h4>
+            <div className="mt-2 text-xs">
+              <ol className="list-decimal ml-4 space-y-1">
+                <li>Select mode (Add Master/Slave/Receiver) and click on map to place stations.</li>
+                <li>Add at least one master and one slave to form baselines.</li>
+                <li>Click "Compute Grid" to generate Lines of Position (LOPs) using WebWorker.</li>
+                <li>Add receivers and simulate pulse arrivals with waveforms.</li>
+                <li>Use TDOA estimation to locate receivers based on time differences.</li>
+                <li>Export scenario as GeoJSON or reset simulation as needed.</li>
+              </ol>
+            </div>
           </div>
 
           <div className="mt-4">
