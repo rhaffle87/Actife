@@ -424,13 +424,12 @@ export default function LoranOfflineSimulator({ tileUrlTemplate = TILE_URL_TEMPL
 
     const text = document.createElement('div');
     text.innerText = label;
-    text.style.marginTop = '4px';
-    text.style.fontSize = '15px';
+    text.style.fontSize = '12px';
     text.style.color = 'black';
     text.style.textShadow = '0 1px 2px rgba(0,0,0,0.6)';
 
-    el.appendChild(text);
     el.appendChild(dot);
+    el.appendChild(text);
 
     const marker = new maplibregl.Marker({ element: el, draggable: true })
       .setLngLat([point.lng, point.lat])

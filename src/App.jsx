@@ -44,7 +44,7 @@ function App() {
               <div className="bg-white rounded-lg shadow-md p-8">
                 <div className="text-center">
                   <img
-                    src="asset\hero-img.png"
+                    src="/asset/hero-img.png"
                     alt="Rafli Alif"
                     className="sm:w-28 sm:h-28 md:w-35 md:h-35 lg:w-60 lg:h-60 rounded-full mx-auto mb-6 object-cover"
                   />
