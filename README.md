@@ -1,6 +1,6 @@
 # AI/ML Interactive Web Application
 
-A comprehensive interactive web application showcasing various AI/ML algorithms and concepts, built with React, Vite, and Tailwind CSS. This project demonstrates implementations of neural networks, linear regression, image processing, and more through an intuitive web interface.
+A comprehensive interactive web application showcasing various AI/ML algorithms and concepts, built with React, Vite, and Tailwind CSS. This project demonstrates implementations of neural networks, linear regression, image processing, computer vision, signal processing, color science, and more through an intuitive web interface.
 
 ## 🚀 Features
 
@@ -29,11 +29,34 @@ A comprehensive interactive web application showcasing various AI/ML algorithms 
 - Image classification
 - Real-time camera integration
 
+### Machine Learning
+- Comprehensive ML algorithm demonstrations
+- Interactive model training and evaluation
+- Performance metrics visualization
+
+### Signal Processing
+- Fourier transforms and analysis
+- Signal filtering techniques
+- Real-time signal processing demos
+
+### Color Science
+- Color space conversions (RGB, CMY, SMPTE, etc.)
+- Color theory demonstrations
+- Interactive color manipulation tools
+
+### Loran-C
+- Loran-C navigation system simulation
+- Signal propagation modeling
+- Positioning accuracy demonstrations
+
+### Tutorials
+- Step-by-step guides for AI/ML concepts
+- Interactive learning modules
+- Code examples and explanations
+
 ### Additional Algorithms
 - Discrete Cosine Transform (DCT) implementations
-- Fourier transforms
 - Quantization algorithms
-- Color space conversions (CMY, SMPTE, etc.)
 - Wavelet transformations
 
 ## 🛠️ Tech Stack
@@ -52,17 +75,27 @@ ai_ml/
 │   ├── components/
 │   │   ├── Navbar.jsx          # Navigation component
 │   │   ├── Home.jsx            # Landing page
+│   │   ├── Tutorials.jsx       # Tutorials section
 │   │   ├── NeuralNetwork.jsx   # NN visualization
 │   │   ├── LinearRegression.jsx # Regression demos
-│   │   └── ImageProcessing.jsx # Image processing tools
+│   │   ├── ImageProcessing.jsx # Image processing tools
+│   │   ├── MachineLearning.jsx # ML algorithms
+│   │   ├── SignalProcessing.jsx # Signal processing demos
+│   │   ├── ColorScience.jsx    # Color science tools
+│   │   ├── Loranc.jsx          # Loran-C simulation
+│   │   ├── MediaPipe.jsx       # Computer vision demos
+│   │   └── CardNav.jsx         # Navigation card component
 │   ├── assets/                 # Static assets
-│   └── main.jsx               # App entry point
-├── chapter4/                   # Color science algorithms
-├── chapter8/                   # Transform coding algorithms
-├── linear_regression/          # Regression implementations
-├── mediapipe/                  # Computer vision demos
-├── public/                     # Public assets
-└── requirements.txt            # Python dependencies
+│   ├── App.jsx                 # Main app component
+│   ├── main.jsx               # App entry point
+│   └── index.css              # Global styles
+├── asset/                      # Public assets (images, icons)
+├── random/                     # Miscellaneous files
+├── requirements.txt            # Python dependencies
+├── package.json                # Node.js dependencies
+├── vite.config.js              # Vite configuration
+├── tailwind.config.js          # Tailwind CSS configuration
+└── README.md                   # Project documentation
 ```
 
 ## 🚀 Getting Started
@@ -107,6 +140,14 @@ npm run preview
 
 ## 📖 Usage
 
+### Home
+- Overview of all available AI/ML tools and sections
+- Quick navigation to different modules
+
+### Tutorials
+- Access step-by-step guides for AI/ML concepts
+- Interactive learning modules with code examples
+
 ### Neural Network Demo
 - Navigate to the Neural Network section
 - View the interactive training visualization
@@ -122,6 +163,26 @@ npm run preview
 - Upload images for JPEG compression
 - Adjust quality settings
 - See hierarchical decoding in action
+
+### Machine Learning
+- Explore comprehensive ML algorithm demonstrations
+- Interactive model training and evaluation
+- View performance metrics and visualizations
+
+### Signal Processing
+- Analyze signals using Fourier transforms
+- Apply various filtering techniques
+- Real-time signal processing demonstrations
+
+### Color Science
+- Experiment with color space conversions
+- Learn color theory through interactive tools
+- Manipulate colors in different spaces (RGB, CMY, SMPTE)
+
+### Loran-C
+- Simulate Loran-C navigation system
+- Model signal propagation
+- Demonstrate positioning accuracy
 
 ### MediaPipe Integration
 - Enable camera permissions for real-time demos
@@ -157,6 +218,14 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 - MediaPipe for computer vision capabilities
 - React and Vite communities
 - Academic sources for algorithm implementations
+
+## 📄 Credits
+
+This AI/ML Interactive Toolkit was developed by Rafli Alif as a comprehensive platform for exploring machine learning algorithms, image processing techniques, and computer vision applications.
+
+**Developer:** Rafli Alif
+- GitHub: [rhaffle87](https://github.com/rhaffle87/)
+- Email: rhaffle87@gmail.com
 
 ## 📞 Contact
 
