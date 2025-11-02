@@ -902,19 +902,20 @@ export default function LoranOfflineSimulator({ tileUrlTemplate = TILE_URL_TEMPL
     }
   }
 
-  // UI render
+  // UI render  
   return (
-    <div className="w-full h-full flex flex-col" style={{height: '820px'}}>
-      <div className="p-3 bg-slate-50 border-b flex items-center gap-3">
+    <div className="w-full h-full flex flex-col min-h-screen">
+      <div className="p-3 bg-slate-50 border-b flex flex-wrap items-center gap-3">
         <h2 className="text-lg font-semibold">LORAN-C Offline Simulator</h2>
-        <div className="flex gap-2 ml-4">
+
+        <div className="flex flex-wrap gap-2 ml-0 md:ml-4">
           <button className={`px-2 py-1 rounded transition-all duration-200 hover:scale-105 hover:shadow-md ${mode==='add-master'? 'bg-sky-600 text-white':''}`} onClick={()=>setMode('add-master')}>Add Master (m)</button>
           <button className={`px-2 py-1 rounded transition-all duration-200 hover:scale-105 hover:shadow-md ${mode==='add-slave'? 'bg-amber-500 text-white':''}`} onClick={()=>setMode('add-slave')}>Add Slave (s)</button>
           <button className={`px-2 py-1 rounded transition-all duration-200 hover:scale-105 hover:shadow-md ${mode==='add-receiver'? 'bg-green-600 text-white':''}`} onClick={()=>setMode('add-receiver')}>Add Receiver (r)</button>
           <button className={`px-2 py-1 rounded transition-all duration-200 hover:scale-105 hover:shadow-md ${mode==='pan'? 'bg-gray-400 text-white':''}`} onClick={()=>setMode('pan')}>Pan (p)</button>
         </div>
 
-        <div className="ml-auto flex gap-2">
+        <div className="ml-auto flex flex-wrap gap-2 w-full md:w-auto justify-end mt-2 md:mt-0">
           <button onClick={()=>computeGrid(200,200)} className="px-3 py-1 rounded bg-indigo-600 text-white transition-all duration-200 hover:scale-105 hover:shadow-md">Compute Grid (WebWorker)</button>
           <button onClick={simulatePulsesAtReceivers} className="px-3 py-1 rounded bg-emerald-600 text-white transition-all duration-200 hover:scale-105 hover:shadow-md">Simulate Pulses</button>
           <button onClick={()=>estimateReceiverLocationFromTDOA(0)} className="px-3 py-1 rounded bg-yellow-500 text-black transition-all duration-200 hover:scale-105 hover:shadow-md">Estimate Rx (TDOA)</button>
@@ -923,9 +924,9 @@ export default function LoranOfflineSimulator({ tileUrlTemplate = TILE_URL_TEMPL
         </div>
       </div>
 
-      <div className="flex-1 flex gap-2 h-screen overflow-hidden">
-        <div className="w-3/4 h-full" ref={mapContainer} />
-        <aside className="w-1/4 p-3 bg-white border-l overflow-y-auto overflow-x-hidden h-full">
+      <div className="flex-1 flex flex-col md:flex-row gap-2 overflow-hidden">
+        <div className="w-full md:w-3/4 h-[400px] md:h-auto" ref={mapContainer} />
+        <aside className="w-full md:w-1/4 p-3 bg-white border-t md:border-t-0 md:border-l overflow-y-auto overflow-x-hidden h-[50vh] md:h-full">
           <h3 className="font-semibold">Legend & Controls</h3>
           <div className="mt-2 text-sm">
             <div><strong>M</strong>: Master station (reference)</div>
@@ -934,7 +935,6 @@ export default function LoranOfflineSimulator({ tileUrlTemplate = TILE_URL_TEMPL
             <div className="mt-3">Freq: {DEFAULT_FREQ / 1000} kHz</div>
             <div>Speed of light c = {C.c.toLocaleString()} m/s</div>
           </div>
-
 
           <div className="mt-4">
             <h4 className="font-medium">How to Use LORAN-C Simulator</h4>
@@ -1011,10 +1011,9 @@ export default function LoranOfflineSimulator({ tileUrlTemplate = TILE_URL_TEMPL
                         <div className="mt-2">
                           <div className="text-xs font-medium">Waveforms:</div>
                           {result.arrivals.map((arrival, i) => {
-                            // Generate individual pulse waveform for this arrival
-                            const pulseSamples = 1000; // 1ms window for each pulse
+                            const pulseSamples = 1000;
                             const pulseWaveform = new Array(pulseSamples).fill(0);
-                            const startSample = Math.floor((arrival.arrivalSec % 0.001) * 1000000); // relative to ms window
+                            const startSample = Math.floor((arrival.arrivalSec % 0.001) * 1000000);
                             const endSample = Math.floor((arrival.arrivalSec % 0.001 + 0.0001) * 1000000);
                             const amplitude = Math.pow(10, arrival.txDbm / 20);
 
