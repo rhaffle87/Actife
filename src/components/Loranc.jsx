@@ -922,17 +922,18 @@ export default function LoranOfflineSimulator({ tileUrlTemplate = TILE_URL_TEMPL
         </div>
       </div>
 
-      <div className="flex-1 flex gap-2">
+      <div className="flex-1 flex gap-2 h-screen overflow-hidden">
         <div className="w-3/4 h-full" ref={mapContainer} />
-        <aside className="w-1/4 p-3 bg-white border-l overflow-auto">
+        <aside className="w-1/4 p-3 bg-white border-l overflow-y-auto overflow-x-hidden h-full">
           <h3 className="font-semibold">Legend & Controls</h3>
           <div className="mt-2 text-sm">
             <div><strong>M</strong>: Master station (reference)</div>
             <div><strong>S</strong>: Slave / secondary station</div>
             <div><strong>R</strong>: Receiver / user device</div>
-            <div className="mt-3">Freq: {DEFAULT_FREQ/1000} kHz</div>
+            <div className="mt-3">Freq: {DEFAULT_FREQ / 1000} kHz</div>
             <div>Speed of light c = {C.c.toLocaleString()} m/s</div>
           </div>
+
 
           <div className="mt-4">
             <h4 className="font-medium">How to Use LORAN-C Simulator</h4>
@@ -990,7 +991,7 @@ export default function LoranOfflineSimulator({ tileUrlTemplate = TILE_URL_TEMPL
                   <div className="text-xs mt-1">
                     {result.arrivals.map((arrival, i) => (
                       <div key={i}>
-                        [{arrival.type.charAt(0).toUpperCase()}] {arrival.station}: {arrival.arrivalSec.toFixed(6)}s, {arrival.txDbm}dBm
+                        [{arrival.type.charAt(0).toUpperCase()}] {arrival.station}: {(arrival.arrivalSec * 1e6).toFixed(3)}μs, {arrival.txDbm}dBm
                       </div>
                     ))}
                   </div>
