@@ -410,6 +410,7 @@ export default function LoranOfflineSimulator({ tileUrlTemplate = TILE_URL_TEMPL
   const [simulationResults, setSimulationResults] = useState(null);
   const [enableNoise, setEnableNoise] = useState(false);
   const [noiseStdDev, setNoiseStdDev] = useState(1e-6); // 1 microsecond default
+  const [expandedResults, setExpandedResults] = useState({});
   const markers = useRef({});
   const estimatedMarkers = useRef({});
   const masterCounter = useRef(0);
@@ -985,50 +986,65 @@ export default function LoranOfflineSimulator({ tileUrlTemplate = TILE_URL_TEMPL
           {simulationResults && (
             <div className="mt-4">
               <h4 className="font-medium">Pulse Simulation Results</h4>
-              {simulationResults.map((result, idx) => (
-                <div key={idx} className="mt-2">
-                  <div className="text-sm font-medium">[R] {result.receiver}</div>
-                  <div className="text-xs mt-1">
-                    {result.arrivals.map((arrival, i) => (
-                      <div key={i}>
-                        [{arrival.type.charAt(0).toUpperCase()}] {arrival.station}: {(arrival.arrivalSec * 1e6).toFixed(3)}μs, {arrival.txDbm}dBm
-                      </div>
-                    ))}
-                  </div>
-                  <div className="mt-2">
-                    <div className="text-xs font-medium">Waveforms:</div>
-                    {result.arrivals.map((arrival, i) => {
-                      // Generate individual pulse waveform for this arrival
-                      const pulseSamples = 1000; // 1ms window for each pulse
-                      const pulseWaveform = new Array(pulseSamples).fill(0);
-                      const startSample = Math.floor((arrival.arrivalSec % 0.001) * 1000000); // relative to ms window
-                      const endSample = Math.floor((arrival.arrivalSec % 0.001 + 0.0001) * 1000000);
-                      const amplitude = Math.pow(10, arrival.txDbm / 20);
-
-                      for (let j = startSample; j < endSample && j < pulseSamples; j++) {
-                        const t = (j - startSample) / 1000000;
-                        const pulseShape = 0.5 * (1 + Math.cos(Math.PI * t / 0.0001));
-                        pulseWaveform[j] += amplitude * pulseShape;
-                      }
-
-                      const maxVal = Math.max(...pulseWaveform) || 1;
-                      return (
-                        <div key={i} className="mt-1">
-                          <div className="text-xs">[{arrival.type.charAt(0).toUpperCase()}] {arrival.station}</div>
-                          <svg width="100%" height="40" viewBox="0 0 1000 40" className="border">
-                            <polyline
-                              fill="none"
-                              stroke={arrival.type === 'master' ? '#1e90ff' : '#f59e0b'}
-                              strokeWidth="1"
-                              points={pulseWaveform.map((val, j) => `${(j / pulseSamples) * 1000},${20 - (val / maxVal) * 20}`).join(' ')}
-                            />
-                          </svg>
+              {simulationResults.map((result, idx) => {
+                const isExpanded = expandedResults[result.receiver] || false;
+                return (
+                  <div key={idx} className="mt-2 border rounded p-2">
+                    <div className="flex items-center justify-between">
+                      <div className="text-sm font-medium">[R] {result.receiver}</div>
+                      <button
+                        onClick={() => setExpandedResults(prev => ({ ...prev, [result.receiver]: !prev[result.receiver] }))}
+                        className="text-xs px-2 py-1 bg-gray-200 rounded hover:bg-gray-300"
+                      >
+                        {isExpanded ? 'Shrink' : 'Expand'}
+                      </button>
+                    </div>
+                    {isExpanded && (
+                      <>
+                        <div className="text-xs mt-1">
+                          {result.arrivals.map((arrival, i) => (
+                            <div key={i}>
+                              [{arrival.type.charAt(0).toUpperCase()}] {arrival.station}: {(arrival.arrivalSec * 1e6).toFixed(3)}μs, {arrival.txDbm}dBm
+                            </div>
+                          ))}
                         </div>
-                      );
-                    })}
+                        <div className="mt-2">
+                          <div className="text-xs font-medium">Waveforms:</div>
+                          {result.arrivals.map((arrival, i) => {
+                            // Generate individual pulse waveform for this arrival
+                            const pulseSamples = 1000; // 1ms window for each pulse
+                            const pulseWaveform = new Array(pulseSamples).fill(0);
+                            const startSample = Math.floor((arrival.arrivalSec % 0.001) * 1000000); // relative to ms window
+                            const endSample = Math.floor((arrival.arrivalSec % 0.001 + 0.0001) * 1000000);
+                            const amplitude = Math.pow(10, arrival.txDbm / 20);
+
+                            for (let j = startSample; j < endSample && j < pulseSamples; j++) {
+                              const t = (j - startSample) / 1000000;
+                              const pulseShape = 0.5 * (1 + Math.cos(Math.PI * t / 0.0001));
+                              pulseWaveform[j] += amplitude * pulseShape;
+                            }
+
+                            const maxVal = Math.max(...pulseWaveform) || 1;
+                            return (
+                              <div key={i} className="mt-1">
+                                <div className="text-xs">[{arrival.type.charAt(0).toUpperCase()}] {arrival.station}</div>
+                                <svg width="100%" height="40" viewBox="0 0 1000 40" className="border">
+                                  <polyline
+                                    fill="none"
+                                    stroke={arrival.type === 'master' ? '#1e90ff' : '#f59e0b'}
+                                    strokeWidth="1"
+                                    points={pulseWaveform.map((val, j) => `${(j / pulseSamples) * 1000},${20 - (val / maxVal) * 20}`).join(' ')}
+                                  />
+                                </svg>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      </>
+                    )}
                   </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
           )}
 
