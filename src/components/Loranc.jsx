@@ -342,6 +342,13 @@ function haversine(a, b) {
   return 2 * R * Math.asin(Math.sqrt(h));
 }
 
+function gaussianNoise(stdDev) {
+  let u = 0, v = 0;
+  while(u === 0) u = Math.random();
+  while(v === 0) v = Math.random();
+  return stdDev * Math.sqrt(-2.0 * Math.log(u)) * Math.cos(2.0 * Math.PI * v);
+}
+
 function solvePositionFromTDOA(pairs, initialLngLat) {
   const refLat = initialLngLat.lat;
   function latLngToXY(lat, lng) {
@@ -401,7 +408,10 @@ export default function LoranOfflineSimulator({ tileUrlTemplate = TILE_URL_TEMPL
   const workerRef = useRef(null);
   const [gridStatus, setGridStatus] = useState(null);
   const [simulationResults, setSimulationResults] = useState(null);
+  const [enableNoise, setEnableNoise] = useState(false);
+  const [noiseStdDev, setNoiseStdDev] = useState(1e-6); // 1 microsecond default
   const markers = useRef({});
+  const estimatedMarkers = useRef({});
   const masterCounter = useRef(0);
   const slaveCounter = useRef(0);
   const receiverCounter = useRef(0);
@@ -808,9 +818,53 @@ export default function LoranOfflineSimulator({ tileUrlTemplate = TILE_URL_TEMPL
       const s = slaves[si];
       const tM = haversine(ref, r)/C.c;
       const tS = haversine(s, r)/C.c;
-      pairs.push({ master: ref, slave: s, tdoaSec: tS - tM });
+      const tdoaSec = tS - tM + (enableNoise ? gaussianNoise(noiseStdDev) : 0);
+      pairs.push({ master: ref, slave: s, tdoaSec });
     }
-    const est = solvePositionFromTDOA(pairs, { lat: r.lat, lng: r.lng });
+    // Perturb initial guess slightly when noise is enabled to avoid starting from true position
+    let initialGuess = { lat: r.lat, lng: r.lng };
+    if (enableNoise) {
+      const perturbation = 0.01; // ~1km perturbation
+      initialGuess.lat += (Math.random() - 0.5) * perturbation;
+      initialGuess.lng += (Math.random() - 0.5) * perturbation;
+    }
+    const est = solvePositionFromTDOA(pairs, initialGuess);
+
+    // Remove existing estimated marker for this receiver if present
+    if (estimatedMarkers.current[receiverIndex]) {
+      estimatedMarkers.current[receiverIndex].remove();
+      delete estimatedMarkers.current[receiverIndex];
+    }
+
+    // Create new estimated marker
+    const el = document.createElement('div');
+    el.className = 'marker marker-estimated';
+    el.style.display = 'flex';
+    el.style.flexDirection = 'column';
+    el.style.alignItems = 'center';
+
+    const dot = document.createElement('div');
+    dot.style.width = '20px';
+    dot.style.height = '20px';
+    dot.style.borderRadius = '50%';
+    dot.style.background = '#666'; // Gray for estimated
+    dot.style.opacity = '0.6'; // Semi-transparent
+
+    const text = document.createElement('div');
+    text.innerText = `Est R${receiverIndex + 1}`;
+    text.style.fontSize = '10px';
+    text.style.color = 'black';
+    text.style.textShadow = '0 1px 2px rgba(0,0,0,0.6)';
+
+    el.appendChild(dot);
+    el.appendChild(text);
+
+    const estimatedMarker = new maplibregl.Marker({ element: el })
+      .setLngLat([est.lng, est.lat])
+      .addTo(mapRef.current);
+
+    estimatedMarkers.current[receiverIndex] = estimatedMarker;
+
     alert(`Estimated position: ${est.lat.toFixed(6)}, ${est.lng.toFixed(6)} — Actual: ${r.lat.toFixed(6)}, ${r.lng.toFixed(6)}`);
   }
 
@@ -829,6 +883,9 @@ export default function LoranOfflineSimulator({ tileUrlTemplate = TILE_URL_TEMPL
     // Remove all markers from map
     Object.values(markers.current).forEach(marker => marker.remove());
     markers.current = {};
+    // Remove all estimated markers from map
+    Object.values(estimatedMarkers.current).forEach(marker => marker.remove());
+    estimatedMarkers.current = {};
     // Remove layers and sources
     if (mapRef.current) {
       if (mapRef.current.getLayer('baselines')) mapRef.current.removeLayer('baselines');
@@ -904,6 +961,18 @@ export default function LoranOfflineSimulator({ tileUrlTemplate = TILE_URL_TEMPL
             <h4 className="font-medium">Grid status</h4>
             <div className="text-xs mt-2">{gridStatus ? (gridStatus.status || 'ready') : 'not computed'}</div>
             {gridStatus && gridStatus.maps && <div className="text-xs mt-2">Maps computed: {gridStatus.maps.length}</div>}
+          </div>
+
+          <div className="mt-4">
+            <h4 className="font-medium">Noise Settings</h4>
+            <div className="mt-2 text-xs">
+              <label>
+                <input type="checkbox" checked={enableNoise} onChange={(e) => setEnableNoise(e.target.checked)} /> Enable Noise
+              </label>
+              <div className="mt-1">
+                <label>Std Dev (s): <input type="number" value={noiseStdDev} onChange={(e) => setNoiseStdDev(parseFloat(e.target.value) || 0)} step="1e-6" min="0" /></label>
+              </div>
+            </div>
           </div>
 
           {simulationResults && (
