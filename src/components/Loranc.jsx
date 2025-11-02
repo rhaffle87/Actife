@@ -423,6 +423,8 @@ export default function LoranOfflineSimulator({ tileUrlTemplate = TILE_URL_TEMPL
     el.style.display = 'flex';
     el.style.flexDirection = 'column';
     el.style.alignItems = 'center';
+    el.style.height = '22px';
+    el.style.overflow = 'visible';
 
     const dot = document.createElement('div');
     dot.style.width = '22px';
@@ -437,11 +439,15 @@ export default function LoranOfflineSimulator({ tileUrlTemplate = TILE_URL_TEMPL
     text.style.fontSize = '12px';
     text.style.color = 'black';
     text.style.textShadow = '0 1px 2px rgba(0,0,0,0.6)';
+    text.style.position = 'absolute';
+    text.style.top = '22px';
+    text.style.left = '50%';
+    text.style.transform = 'translateX(-50%)';
 
     el.appendChild(dot);
     el.appendChild(text);
 
-    const marker = new maplibregl.Marker({ element: el, draggable: true })
+    const marker = new maplibregl.Marker({ element: el, anchor: 'center', draggable: true })
       .setLngLat([point.lng, point.lat])
       .addTo(mapRef.current);
 
