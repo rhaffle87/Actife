@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from 'react';
 import { NavLink } from 'react-router-dom';
-import { Menu, X, Home, ChevronDown, User } from 'lucide-react';
+import { Menu, X, Home, ChevronDown, User, BookText, List, Brain, Image, TrendingUp, Palette, Radio, MapPin, Cpu, Video } from 'lucide-react';
 import logo from '../assets/logo.png';
 
 const Navbar = ({ activeSection }) => {
@@ -10,14 +10,14 @@ const Navbar = ({ activeSection }) => {
   const dropdownRef = useRef(null);
 
   const features = [
-    { id: 'neural-network', label: 'Neural Networks' },
-    { id: 'image-processing', label: 'Image Processing' },
-    { id: 'linear-regression', label: 'Linear Regression' },
-    { id: 'color-science', label: 'Color Science' },
-    { id: 'signal-processing', label: 'Signal Processing' },
-    { id: 'loran-c', label: 'LORAN-C Simulator' },
-    { id: 'machine-learning', label: 'Machine Learning' },
-    { id: 'mediapipe', label: 'MediaPipe' },
+    { id: 'neural-network', label: 'Neural Networks', icon: Brain },
+    { id: 'image-processing', label: 'Image Processing', icon: Image },
+    { id: 'linear-regression', label: 'Linear Regression', icon: TrendingUp },
+    { id: 'color-science', label: 'Color Science', icon: Palette },
+    { id: 'signal-processing', label: 'Signal Processing', icon: Radio },
+    { id: 'loran-c', label: 'LORAN-C Simulator', icon: MapPin },
+    { id: 'machine-learning', label: 'Machine Learning', icon: Cpu },
+    { id: 'mediapipe', label: 'MediaPipe', icon: Video },
   ];
 
   // Close dropdown when clicking outside
@@ -81,6 +81,7 @@ const Navbar = ({ activeSection }) => {
                 }`
               }
             >
+              <BookText size={16} className="transition-transform duration-300 group-hover:scale-110" />
               <span>Tutorials</span>
             </NavLink>
 
@@ -94,6 +95,7 @@ const Navbar = ({ activeSection }) => {
                     : 'text-gray-300 hover:bg-gray-700 hover:text-white hover:shadow-md'
                 }`}
               >
+                <List size={16} className="transition-transform duration-300 group-hover:scale-110" />
                 <span>Features</span>
                 <ChevronDown size={16} className={`transition-transform duration-200 ${isFeaturesOpen ? 'rotate-180' : ''}`} />
               </button>
@@ -101,20 +103,24 @@ const Navbar = ({ activeSection }) => {
               {isFeaturesOpen && (
                 <div className="absolute top-full left-0 mt-2 w-64 bg-gray-800 rounded-lg shadow-xl border border-gray-700 z-50 overflow-hidden">
                   <div className="py-2">
-                    {features.map((feature, index) => (
-                      <NavLink
-                        key={feature.id}
-                        to={`/${feature.id}`}
-                        onClick={() => setIsFeaturesOpen(false)}
-                        className={({ isActive }) =>
-                          `block px-4 py-3 text-sm hover:bg-gray-700 transition-colors duration-150 ${
-                            isActive ? 'bg-blue-600 text-white' : 'text-gray-300'
-                          } ${index !== features.length - 1 ? 'border-b border-gray-700' : ''}`
-                        }
-                      >
-                        {feature.label}
-                      </NavLink>
-                    ))}
+                    {features.map((feature, index) => {
+                      const IconComponent = feature.icon;
+                      return (
+                        <NavLink
+                          key={feature.id}
+                          to={`/${feature.id}`}
+                          onClick={() => setIsFeaturesOpen(false)}
+                          className={({ isActive }) =>
+                            `flex items-center space-x-2 px-4 py-3 text-sm hover:bg-gray-700 transition-colors duration-150 ${
+                              isActive ? 'bg-blue-600 text-white' : 'text-gray-300'
+                            } ${index !== features.length - 1 ? 'border-b border-gray-700' : ''}`
+                          }
+                        >
+                          <IconComponent size={16} />
+                          <span>{feature.label}</span>
+                        </NavLink>
+                      );
+                    })}
                   </div>
                 </div>
               )}
@@ -182,22 +188,26 @@ const Navbar = ({ activeSection }) => {
               {/* Mobile Features Section */}
               <div className="space-y-1">
                 <div className="px-3 py-2 text-sm font-medium text-gray-400">Features</div>
-                {features.map((feature) => (
-                  <NavLink
-                    key={feature.id}
-                    to={`/${feature.id}`}
-                    onClick={() => setIsOpen(false)}
-                    className={({ isActive }) =>
-                      `flex items-center space-x-2 w-full text-left px-6 py-2 rounded-md text-base font-medium transition-colors ${
-                        isActive
-                          ? 'bg-blue-600 text-white'
-                          : 'text-gray-300 hover:bg-gray-700 hover:text-white'
-                      }`
-                    }
-                  >
-                    <span>{feature.label}</span>
-                  </NavLink>
-                ))}
+                {features.map((feature) => {
+                  const IconComponent = feature.icon;
+                  return (
+                    <NavLink
+                      key={feature.id}
+                      to={`/${feature.id}`}
+                      onClick={() => setIsOpen(false)}
+                      className={({ isActive }) =>
+                        `flex items-center space-x-2 w-full text-left px-6 py-2 rounded-md text-base font-medium transition-colors ${
+                          isActive
+                            ? 'bg-blue-600 text-white'
+                            : 'text-gray-300 hover:bg-gray-700 hover:text-white'
+                        }`
+                      }
+                    >
+                      <IconComponent size={16} />
+                      <span>{feature.label}</span>
+                    </NavLink>
+                  );
+                })}
               </div>
 
               <NavLink
