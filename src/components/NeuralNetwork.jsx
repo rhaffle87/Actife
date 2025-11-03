@@ -1,5 +1,4 @@
 import { useState, useEffect } from 'react';
-import * as tf from '@tensorflow/tfjs';
 import {
   Chart as ChartJS,
   CategoryScale,
@@ -12,6 +11,7 @@ import {
 } from 'chart.js';
 import { Line as LineChart, Scatter as ScatterChart } from 'react-chartjs-2';
 
+// Register Chart.js modules
 ChartJS.register(
   CategoryScale,
   LinearScale,
@@ -23,19 +23,29 @@ ChartJS.register(
 );
 
 const NeuralNetwork = () => {
+  const [tf, setTf] = useState(null);
   const [model, setModel] = useState(null);
   const [isTraining, setIsTraining] = useState(false);
   const [trainingData, setTrainingData] = useState([]);
   const [testData, setTestData] = useState([]);
-
   const [lossHistory, setLossHistory] = useState([]);
   const [epochs, setEpochs] = useState(100);
   const [learningRate, setLearningRate] = useState(0.01);
   const [layers, setLayers] = useState([
     { units: 5, activation: 'relu' },
     { units: 5, activation: 'relu' },
-    { units: 1, activation: 'sigmoid' }
+    { units: 1, activation: 'sigmoid' },
   ]);
+
+  // ✅ Lazy-load TensorFlow.js
+  useEffect(() => {
+    const loadTF = async () => {
+      const tfModule = await import('@tensorflow/tfjs');
+      setTf(tfModule);
+      console.log('TensorFlow.js loaded:', tfModule.version.tfjs);
+    };
+    loadTF();
+  }, []);
 
   // Generate synthetic data
   const generateData = () => {
@@ -52,8 +62,9 @@ const NeuralNetwork = () => {
     return { x, y };
   };
 
-  // Create and train model
+  // Create model dynamically after TensorFlow loads
   const createModel = async () => {
+    if (!tf) return null;
     const model = tf.sequential();
     layers.forEach((layer, index) => {
       if (index === 0) {
@@ -62,18 +73,16 @@ const NeuralNetwork = () => {
         model.add(tf.layers.dense({ units: layer.units, activation: layer.activation }));
       }
     });
-
     model.compile({
       optimizer: tf.train.adam(learningRate),
       loss: 'binaryCrossentropy',
-      metrics: ['accuracy']
+      metrics: ['accuracy'],
     });
-
     return model;
   };
 
   const trainModel = async () => {
-    if (!model) return;
+    if (!tf || !model) return;
 
     setIsTraining(true);
     const { x, y } = generateData();
@@ -82,16 +91,16 @@ const NeuralNetwork = () => {
 
     const history = [];
     await model.fit(xs, ys, {
-      epochs: epochs,
+      epochs,
       callbacks: {
         onEpochEnd: (epoch, logs) => {
           history.push(logs.loss);
           setLossHistory([...history]);
-        }
-      }
+        },
+      },
     });
 
-    // Generate predictions
+    // Generate test data and predictions
     const testX = [];
     const testY = [];
     for (let i = 0; i < 200; i++) {
@@ -103,49 +112,58 @@ const NeuralNetwork = () => {
       testY.push(output > 0 ? 1 : 0);
     }
 
-
     const predTensor = model.predict(tf.tensor2d(testX));
     await predTensor.data();
 
     setTrainingData(x.map((point, i) => ({ x: point[0], y: point[1], z: point[2], label: y[i] })));
     setTestData(testX.map((point, i) => ({ x: point[0], y: point[1], z: point[2], label: testY[i] })));
 
-
     setIsTraining(false);
   };
 
   useEffect(() => {
     const initModel = async () => {
+      if (!tf) return;
       const newModel = await createModel();
       setModel(newModel);
     };
     initModel();
-  }, [learningRate, layers]);
+  }, [tf, learningRate, layers]);
 
   const lossChartData = {
     labels: lossHistory.map((_, i) => i + 1),
-    datasets: [{
-      label: 'Training Loss',
-      data: lossHistory,
-      borderColor: 'rgb(75, 192, 192)',
-      tension: 0.1
-    }]
+    datasets: [
+      {
+        label: 'Training Loss',
+        data: lossHistory,
+        borderColor: 'rgb(75, 192, 192)',
+        tension: 0.1,
+      },
+    ],
   };
 
   const scatterData = {
     datasets: [
       {
         label: 'Training Data',
-        data: trainingData.slice(0, 100).map(d => ({ x: d.x, y: d.y })),
+        data: trainingData.slice(0, 100).map((d) => ({ x: d.x, y: d.y })),
         backgroundColor: 'rgba(255, 99, 132, 0.6)',
       },
       {
         label: 'Test Data',
-        data: testData.slice(0, 100).map(d => ({ x: d.x, y: d.y })),
+        data: testData.slice(0, 100).map((d) => ({ x: d.x, y: d.y })),
         backgroundColor: 'rgba(54, 162, 235, 0.6)',
-      }
-    ]
+      },
+    ],
   };
+
+  if (!tf) {
+    return (
+      <div className="min-h-screen flex items-center justify-center text-lg text-gray-600">
+        Loading TensorFlow.js...
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gray-50 p-6">

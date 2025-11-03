@@ -1,15 +1,16 @@
-import { useState } from 'react'
+import React, { useState, lazy, Suspense } from 'react'
 import Navbar from './components/Navbar'
 import Home from './components/Home'
 import Tutorials from './components/Tutorials'
-import NeuralNetwork from './components/NeuralNetwork'
-import ImageProcessing from './components/ImageProcessing'
-import SignalProcessing from './components/SignalProcessing'
-import LinearRegression from './components/LinearRegression'
-import ColorScience from './components/ColorScience'
-import Loranc from './components/Loranc'
-import MachineLearning from './components/MachineLearning'
-import MediaPipe from './components/MediaPipe'
+
+const NeuralNetwork = lazy(() => import('./components/NeuralNetwork'))
+const ImageProcessing = lazy(() => import('./components/ImageProcessing'))
+const SignalProcessing = lazy(() => import('./components/SignalProcessing'))
+const LinearRegression = lazy(() => import('./components/LinearRegression'))
+const ColorScience = lazy(() => import('./components/ColorScience'))
+const Loranc = lazy(() => import('./components/Loranc'))
+const MachineLearning = lazy(() => import('./components/MachineLearning'))
+const MediaPipe = lazy(() => import('./components/MediaPipe'))
 
 function App() {
   const [activeSection, setActiveSection] = useState('home')
@@ -79,7 +80,9 @@ function App() {
   return (
     <div className="min-h-screen bg-gray-50">
       <Navbar activeSection={activeSection} setActiveSection={setActiveSection} />
-      {renderContent()}
+      <Suspense fallback={<div className="p-8 text-center text-gray-600">Loading...</div>}>
+        {renderContent()}
+      </Suspense>
     </div>
   )
 }
