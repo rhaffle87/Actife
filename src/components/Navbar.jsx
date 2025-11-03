@@ -1,10 +1,12 @@
 import { useState, useRef, useEffect } from 'react';
 import { NavLink } from 'react-router-dom';
 import { Menu, X, Home, ChevronDown, User } from 'lucide-react';
+import logo from '../assets/logo.png';
 
 const Navbar = ({ activeSection }) => {
   const [isOpen, setIsOpen] = useState(false);
   const [isFeaturesOpen, setIsFeaturesOpen] = useState(false);
+  const [isLogoHovered, setIsLogoHovered] = useState(false);
   const dropdownRef = useRef(null);
 
   const features = [
@@ -37,7 +39,20 @@ const Navbar = ({ activeSection }) => {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between h-16">
           <div className="flex items-center">
-            <h1 className="text-xl font-bold">AI/ML Toolkit</h1>
+            <NavLink
+              to="/"
+              className="flex items-center transition-all duration-300 transform hover:scale-105 active:scale-95"
+              onMouseEnter={() => setIsLogoHovered(true)}
+              onMouseLeave={() => setIsLogoHovered(false)}
+            >
+              <img
+                src={logo}
+                alt="AI/ML Toolkit Logo"
+                className={`h-10 w-auto transition-all duration-300 ${
+                  isLogoHovered ? 'brightness-110 drop-shadow-lg' : 'brightness-100'
+                }`}
+              />
+            </NavLink>
           </div>
 
           {/* Desktop Navigation */}
