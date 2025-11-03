@@ -2,7 +2,7 @@ import React, { useState, lazy, Suspense } from 'react'
 import Navbar from './components/Navbar'
 import Home from './components/Home'
 import Tutorials from './components/Tutorials'
-import CreditsImg from '/assets/hero-img.png';
+import CreditsImg from './assets/hero-img.png';
 
 const NeuralNetwork = lazy(() => import('./components/NeuralNetwork'))
 const ImageProcessing = lazy(() => import('./components/ImageProcessing'))
