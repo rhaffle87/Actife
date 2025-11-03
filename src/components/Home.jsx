@@ -1,7 +1,8 @@
 import { Brain, Image, Palette, BarChart3, Zap, Code, Github, BookOpen } from 'lucide-react';
 import { Link } from 'react-router-dom';
+import logo from '../assets/logo.png';
 
-const Home = ({ setActiveSection }) => {
+const Home = () => {
   const features = [
     {
       icon: Brain,
@@ -47,21 +48,33 @@ const Home = ({ setActiveSection }) => {
       <div className="bg-linear-to-r from-blue-600 to-purple-700 text-white">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-24">
           <div className="text-center">
-            <h1 className="text-4xl md:text-6xl font-bold mb-6">
-              AI/ML Interactive Toolkit
+            {/* Logo */}
+            <div className="mb-8">
+              <img
+                src={logo}
+                alt="ACTIFE Logo"
+                className="h-24 md:h-32 mx-auto mb-4 transition-all duration-500 hover:scale-110 hover:brightness-110"
+              />
+            </div>
+
+            {/* Main Title */}
+            <h1 className="text-3xl md:text-5xl font-bold mb-4">
+              Artificial Computing Toolkit for Intelligent Feature Experiments
             </h1>
-            <p className="text-xl md:text-2xl mb-8 text-blue-100">
+            <br></br>
+
+            <p className="text-lg md:text-xl mb-8 text-blue-100 max-w-4xl mx-auto">
               Explore machine learning algorithms, image processing techniques, and computer vision applications
-              through interactive web interfaces
+              through interactive web interfaces powered by cutting-edge AI technologies
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
               <Link
                 to="/tutorials"
-                className="bg-white text-blue-600 px-8 py-3 rounded-lg font-semibold hover:bg-gray-100 transition-colors"
+                className="bg-white text-blue-600 px-8 py-3 rounded-lg font-semibold hover:bg-gray-100 transition-all duration-300 transform hover:scale-105 hover:shadow-lg"
               >
                 Get Started
               </Link>
-              <a href="https://github.com/rhaffle87/ai_ml" target="_blank" rel="noopener noreferrer" className="border-2 border-white text-white px-8 py-3 rounded-lg font-semibold hover:bg-white hover:text-blue-600 transition-colors flex items-center justify-center gap-2">
+              <a href="https://github.com/rhaffle87/ai_ml" target="_blank" rel="noopener noreferrer" className="border-2 border-white text-white px-8 py-3 rounded-lg font-semibold hover:bg-white hover:text-blue-600 transition-all duration-300 transform hover:scale-105 hover:shadow-lg flex items-center justify-center gap-2">
                 <Github size={20} />
                 View on GitHub
               </a>
