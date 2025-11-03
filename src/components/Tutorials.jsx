@@ -1,4 +1,5 @@
 import { BookOpen, Play, FileText, Video, Code, CheckCircle, ArrowRight } from 'lucide-react';
+import { Link } from 'react-router-dom';
 
 const Tutorials = ({ setActiveSection }) => {
   const tutorials = [
@@ -196,13 +197,13 @@ const Tutorials = ({ setActiveSection }) => {
                     </ol>
                   </div>
 
-                  <button
-                    onClick={() => setActiveSection(tutorial.id)}
+                  <Link
+                    to={`/${tutorial.id}`}
                     className="w-full bg-blue-600 text-white py-2 px-4 rounded-lg hover:bg-blue-700 transition-colors flex items-center justify-center"
                   >
                     Start Learning
                     <ArrowRight size={16} className="ml-2" />
-                  </button>
+                  </Link>
                 </div>
               </div>
             );

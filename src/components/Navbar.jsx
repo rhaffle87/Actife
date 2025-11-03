@@ -1,9 +1,11 @@
-import { useState } from 'react';
+import { useState, useRef, useEffect } from 'react';
+import { NavLink } from 'react-router-dom';
 import { Menu, X, Home, ChevronDown, User } from 'lucide-react';
 
-const Navbar = ({ activeSection, setActiveSection }) => {
+const Navbar = ({ activeSection }) => {
   const [isOpen, setIsOpen] = useState(false);
   const [isFeaturesOpen, setIsFeaturesOpen] = useState(false);
+  const dropdownRef = useRef(null);
 
   const features = [
     { id: 'neural-network', label: 'Neural Networks' },
@@ -16,6 +18,20 @@ const Navbar = ({ activeSection, setActiveSection }) => {
     { id: 'mediapipe', label: 'MediaPipe' },
   ];
 
+  // Close dropdown when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
+        setIsFeaturesOpen(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, []);
+
   return (
     <nav className="bg-gray-900 text-white shadow-lg">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -26,77 +42,82 @@ const Navbar = ({ activeSection, setActiveSection }) => {
 
           {/* Desktop Navigation */}
           <div className="hidden md:flex items-center space-x-4">
-            <button
-              onClick={() => setActiveSection('home')}
-              className={`flex items-center space-x-2 px-3 py-2 rounded-md text-sm font-medium transition-colors ${
-                activeSection === 'home'
-                  ? 'bg-blue-600 text-white'
-                  : 'text-gray-300 hover:bg-gray-700 hover:text-white'
-              }`}
+            <NavLink
+              to="/"
+              className={({ isActive }) =>
+                `flex items-center space-x-2 px-3 py-2 rounded-md text-sm font-medium transition-all duration-300 transform hover:scale-105 ${
+                  isActive
+                    ? 'bg-blue-600 text-white shadow-lg'
+                    : 'text-gray-300 hover:bg-gray-700 hover:text-white hover:shadow-md'
+                }`
+              }
             >
-              <Home size={16} />
+              <Home size={16} className="transition-transform duration-300 group-hover:scale-110" />
               <span>Home</span>
-            </button>
+            </NavLink>
 
-            <button
-              onClick={() => setActiveSection('tutorials')}
-              className={`flex items-center space-x-2 px-3 py-2 rounded-md text-sm font-medium transition-colors ${
-                activeSection === 'tutorials'
-                  ? 'bg-blue-600 text-white'
-                  : 'text-gray-300 hover:bg-gray-700 hover:text-white'
-              }`}
+            <NavLink
+              to="/tutorials"
+              className={({ isActive }) =>
+                `flex items-center space-x-2 px-3 py-2 rounded-md text-sm font-medium transition-all duration-300 transform hover:scale-105 ${
+                  isActive
+                    ? 'bg-blue-600 text-white shadow-lg'
+                    : 'text-gray-300 hover:bg-gray-700 hover:text-white hover:shadow-md'
+                }`
+              }
             >
               <span>Tutorials</span>
-            </button>
+            </NavLink>
 
             {/* Features Dropdown */}
-            <div
-              className="relative"
-              onMouseEnter={() => setIsFeaturesOpen(true)}
-              onMouseLeave={() => setIsFeaturesOpen(false)}
-            >
+            <div className="relative" ref={dropdownRef}>
               <button
-                className={`flex items-center space-x-2 px-3 py-2 rounded-md text-sm font-medium transition-colors ${
+                onClick={() => setIsFeaturesOpen(!isFeaturesOpen)}
+                className={`flex items-center space-x-2 px-3 py-2 rounded-md text-sm font-medium transition-all duration-300 transform hover:scale-105 ${
                   features.some(f => f.id === activeSection)
-                    ? 'bg-blue-600 text-white'
-                    : 'text-gray-300 hover:bg-gray-700 hover:text-white'
+                    ? 'bg-blue-600 text-white shadow-lg'
+                    : 'text-gray-300 hover:bg-gray-700 hover:text-white hover:shadow-md'
                 }`}
               >
                 <span>Features</span>
-                <ChevronDown size={16} className={`transition-transform ${isFeaturesOpen ? 'rotate-180' : ''}`} />
+                <ChevronDown size={16} className={`transition-transform duration-200 ${isFeaturesOpen ? 'rotate-180' : ''}`} />
               </button>
 
               {isFeaturesOpen && (
-                <div className="absolute top-full left-0 mt-1 w-56 bg-gray-800 rounded-md shadow-lg z-50">
-                  {features.map((feature) => (
-                    <button
-                      key={feature.id}
-                      onClick={() => {
-                        setActiveSection(feature.id);
-                        setIsFeaturesOpen(false);
-                      }}
-                      className={`w-full text-left px-4 py-2 text-sm hover:bg-gray-700 transition-colors ${
-                        activeSection === feature.id ? 'bg-blue-600 text-white' : 'text-gray-300'
-                      }`}
-                    >
-                      {feature.label}
-                    </button>
-                  ))}
+                <div className="absolute top-full left-0 mt-2 w-64 bg-gray-800 rounded-lg shadow-xl border border-gray-700 z-50 overflow-hidden">
+                  <div className="py-2">
+                    {features.map((feature, index) => (
+                      <NavLink
+                        key={feature.id}
+                        to={`/${feature.id}`}
+                        onClick={() => setIsFeaturesOpen(false)}
+                        className={({ isActive }) =>
+                          `block px-4 py-3 text-sm hover:bg-gray-700 transition-colors duration-150 ${
+                            isActive ? 'bg-blue-600 text-white' : 'text-gray-300'
+                          } ${index !== features.length - 1 ? 'border-b border-gray-700' : ''}`
+                        }
+                      >
+                        {feature.label}
+                      </NavLink>
+                    ))}
+                  </div>
                 </div>
               )}
             </div>
 
-            <button
-              onClick={() => setActiveSection('credits')}
-              className={`flex items-center space-x-2 px-3 py-2 rounded-md text-sm font-medium transition-colors ${
-                activeSection === 'credits'
-                  ? 'bg-blue-600 text-white'
-                  : 'text-gray-300 hover:bg-gray-700 hover:text-white'
-              }`}
+            <NavLink
+              to="/credits"
+              className={({ isActive }) =>
+                `flex items-center space-x-2 px-3 py-2 rounded-md text-sm font-medium transition-all duration-300 transform hover:scale-105 ${
+                  isActive
+                    ? 'bg-blue-600 text-white shadow-lg'
+                    : 'text-gray-300 hover:bg-gray-700 hover:text-white hover:shadow-md'
+                }`
+              }
             >
-              <User size={16} />
+              <User size={16} className="transition-transform duration-300 group-hover:scale-110" />
               <span>Credits</span>
-            </button>
+            </NavLink>
           </div>
 
           {/* Mobile menu button */}
@@ -114,70 +135,70 @@ const Navbar = ({ activeSection, setActiveSection }) => {
         {isOpen && (
           <div className="md:hidden">
             <div className="px-2 pt-2 pb-3 space-y-1 sm:px-3">
-              <button
-                onClick={() => {
-                  setActiveSection('home');
-                  setIsOpen(false);
-                }}
-                className={`flex items-center space-x-2 w-full text-left px-3 py-2 rounded-md text-base font-medium transition-colors ${
-                  activeSection === 'home'
-                    ? 'bg-blue-600 text-white'
-                    : 'text-gray-300 hover:bg-gray-700 hover:text-white'
-                }`}
+              <NavLink
+                to="/"
+                onClick={() => setIsOpen(false)}
+                className={({ isActive }) =>
+                  `flex items-center space-x-2 w-full text-left px-3 py-2 rounded-md text-base font-medium transition-colors ${
+                    isActive
+                      ? 'bg-blue-600 text-white'
+                      : 'text-gray-300 hover:bg-gray-700 hover:text-white'
+                  }`
+                }
               >
                 <Home size={16} />
                 <span>Home</span>
-              </button>
+              </NavLink>
 
-              <button
-                onClick={() => {
-                  setActiveSection('tutorials');
-                  setIsOpen(false);
-                }}
-                className={`flex items-center space-x-2 w-full text-left px-3 py-2 rounded-md text-base font-medium transition-colors ${
-                  activeSection === 'tutorials'
-                    ? 'bg-blue-600 text-white'
-                    : 'text-gray-300 hover:bg-gray-700 hover:text-white'
-                }`}
+              <NavLink
+                to="/tutorials"
+                onClick={() => setIsOpen(false)}
+                className={({ isActive }) =>
+                  `flex items-center space-x-2 w-full text-left px-3 py-2 rounded-md text-base font-medium transition-colors ${
+                    isActive
+                      ? 'bg-blue-600 text-white'
+                      : 'text-gray-300 hover:bg-gray-700 hover:text-white'
+                  }`
+                }
               >
                 <span>Tutorials</span>
-              </button>
+              </NavLink>
 
               {/* Mobile Features Section */}
               <div className="space-y-1">
                 <div className="px-3 py-2 text-sm font-medium text-gray-400">Features</div>
                 {features.map((feature) => (
-                  <button
+                  <NavLink
                     key={feature.id}
-                    onClick={() => {
-                      setActiveSection(feature.id);
-                      setIsOpen(false);
-                    }}
-                    className={`flex items-center space-x-2 w-full text-left px-6 py-2 rounded-md text-base font-medium transition-colors ${
-                      activeSection === feature.id
-                        ? 'bg-blue-600 text-white'
-                        : 'text-gray-300 hover:bg-gray-700 hover:text-white'
-                    }`}
+                    to={`/${feature.id}`}
+                    onClick={() => setIsOpen(false)}
+                    className={({ isActive }) =>
+                      `flex items-center space-x-2 w-full text-left px-6 py-2 rounded-md text-base font-medium transition-colors ${
+                        isActive
+                          ? 'bg-blue-600 text-white'
+                          : 'text-gray-300 hover:bg-gray-700 hover:text-white'
+                      }`
+                    }
                   >
                     <span>{feature.label}</span>
-                  </button>
+                  </NavLink>
                 ))}
               </div>
 
-              <button
-                onClick={() => {
-                  setActiveSection('credits');
-                  setIsOpen(false);
-                }}
-                className={`flex items-center space-x-2 w-full text-left px-3 py-2 rounded-md text-base font-medium transition-colors ${
-                  activeSection === 'credits'
-                    ? 'bg-blue-600 text-white'
-                    : 'text-gray-300 hover:bg-gray-700 hover:text-white'
-                }`}
+              <NavLink
+                to="/credits"
+                onClick={() => setIsOpen(false)}
+                className={({ isActive }) =>
+                  `flex items-center space-x-2 w-full text-left px-3 py-2 rounded-md text-base font-medium transition-colors ${
+                    isActive
+                      ? 'bg-blue-600 text-white'
+                      : 'text-gray-300 hover:bg-gray-700 hover:text-white'
+                  }`
+                }
               >
                 <User size={16} />
                 <span>Credits</span>
-              </button>
+              </NavLink>
             </div>
           </div>
         )}

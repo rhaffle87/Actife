@@ -1,4 +1,5 @@
 import { Brain, Image, Palette, BarChart3, Zap, Code, Github, BookOpen } from 'lucide-react';
+import { Link } from 'react-router-dom';
 
 const Home = ({ setActiveSection }) => {
   const features = [
@@ -54,13 +55,14 @@ const Home = ({ setActiveSection }) => {
               through interactive web interfaces
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
-              <button
-                onClick={() => setActiveSection('tutorials')}
+              <Link
+                to="/tutorials"
                 className="bg-white text-blue-600 px-8 py-3 rounded-lg font-semibold hover:bg-gray-100 transition-colors"
               >
                 Get Started
-              </button>
-              <a href="https://github.com/rhaffle87/ai_ml" target="_blank" rel="noopener noreferrer" className="border-2 border-white text-white px-8 py-3 rounded-lg font-semibold hover:bg-white hover:text-blue-600 transition-colors">
+              </Link>
+              <a href="https://github.com/rhaffle87/ai_ml" target="_blank" rel="noopener noreferrer" className="border-2 border-white text-white px-8 py-3 rounded-lg font-semibold hover:bg-white hover:text-blue-600 transition-colors flex items-center gap-2">
+                <Github size={20} />
                 View on GitHub
               </a>
             </div>
@@ -106,28 +108,9 @@ const Home = ({ setActiveSection }) => {
                   real implementations that you can interact with directly in your browser.
                 </p>
                 <p className="text-lg text-gray-600 mb-6">
-                  Whether you're learning about neural networks, exploring image compression algorithms,
-                  or experimenting with computer vision applications, this toolkit offers an accessible
+                  Whether you're learning about neural networks, exploring image compression algorithms, or experimenting with computer vision applications, this toolkit offers an accessible
                   way to understand and interact with these technologies.
                 </p>
-                <div className="flex flex-col sm:flex-row gap-4">
-                  <button
-                    onClick={() => setActiveSection('tutorials')}
-                    className="inline-flex items-center justify-center px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
-                  >
-                    <BookOpen size={20} className="mr-2" />
-                    Start Learning
-                  </button>
-                  <a
-                    href="https://github.com/rhaffle87/ai_ml"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="inline-flex items-center justify-center px-6 py-3 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"
-                  >
-                    <Github size={20} className="mr-2" />
-                    View Source
-                  </a>
-                </div>
               </div>
               <div className="bg-gray-100 rounded-lg p-8">
                 <h3 className="text-xl font-semibold text-gray-900 mb-4">Technologies Used</h3>
