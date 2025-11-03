@@ -46,6 +46,7 @@ function App() {
               <div className="bg-white rounded-lg shadow-md p-8">
                 <div className="text-center">
                   <img src={CreditsImg} alt="Rafli Alif" className="sm:w-28 sm:h-28 md:w-35 md:h-35 lg:w-60 lg:h-60 rounded-full mx-auto mb-6 object-cover"/>
+                  <h2 className="text-2xl font-bold text-gray-800 mb-4">Rafli Alif</h2>
                   <p className="text-gray-600 mb-6">Creator & Developer</p>
                   <p className="text-lg text-gray-700 mb-6">
                     This AI/ML Interactive Toolkit was developed by Rafli Alif as a comprehensive platform
