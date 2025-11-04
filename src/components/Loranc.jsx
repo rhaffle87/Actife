@@ -908,10 +908,10 @@ export default function LoranOfflineSimulator({ tileUrlTemplate = TILE_URL_TEMPL
 
   // UI render  
   return (
-    <div className="w-full h-full flex flex-col min-h-screen">
-      <div className="p-3 bg-slate-50 border-b flex flex-wrap items-center">
+    <div className="w-full h-full flex flex-col">
+      <div className="px-3 py-1 bg-slate-50 border-b flex flex-wrap items-center">
         <h2 className="text-lg font-semibold w-full md:w-auto text-center md:text-left">
-          LORAN-C Offline Simulator
+          LORAN-C Simulator
         </h2>
 
         {/* === Mode Buttons Group === */}
@@ -1004,7 +1004,7 @@ export default function LoranOfflineSimulator({ tileUrlTemplate = TILE_URL_TEMPL
                 }
               }}
             >
-              Pan/Zoom
+              Pan
             </button>
           </div>
         </div>
