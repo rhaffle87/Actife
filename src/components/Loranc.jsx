@@ -902,27 +902,175 @@ export default function LoranOfflineSimulator({ tileUrlTemplate = TILE_URL_TEMPL
     }
   }
 
+  const [showModes, setShowModes] = useState(false);
+  const [showActions, setShowActions] = useState(false);
+  const [animatingMode, setAnimatingMode] = useState(null);
+  const [animatingToggle, setAnimatingToggle] = useState(false);
+
   // UI render  
   return (
     <div className="w-full h-full flex flex-col min-h-screen">
-      <div className="p-3 bg-slate-50 border-b flex flex-wrap items-center gap-3">
-        <h2 className="text-lg font-semibold">LORAN-C Offline Simulator</h2>
+      <div className="p-3 bg-slate-50 border-b flex flex-wrap items-center">
+        <h2 className="text-lg font-semibold w-full md:w-auto text-center md:text-left">
+          LORAN-C Offline Simulator
+        </h2>
 
-        <div className="flex flex-wrap gap-2 ml-0 md:ml-4">
-          <button className={`px-2 py-1 rounded transition-all duration-200 hover:scale-105 hover:shadow-md ${mode==='add-master'? 'bg-sky-600 text-white':''}`} onClick={()=>setMode('add-master')}>Add Master (m)</button>
-          <button className={`px-2 py-1 rounded transition-all duration-200 hover:scale-105 hover:shadow-md ${mode==='add-slave'? 'bg-amber-500 text-white':''}`} onClick={()=>setMode('add-slave')}>Add Slave (s)</button>
-          <button className={`px-2 py-1 rounded transition-all duration-200 hover:scale-105 hover:shadow-md ${mode==='add-receiver'? 'bg-green-600 text-white':''}`} onClick={()=>setMode('add-receiver')}>Add Receiver (r)</button>
-          <button className={`px-2 py-1 rounded transition-all duration-200 hover:scale-105 hover:shadow-md ${mode==='pan'? 'bg-gray-400 text-white':''}`} onClick={()=>setMode('pan')}>Pan (p)</button>
+        {/* === Mode Buttons Group === */}
+        <div className="w-full md:w-auto md:bg-transparent bg-white rounded-xl shadow-sm md:shadow-none p-2 ml-0 md:ml-4">
+          {/* Mobile toggle header */}
+          <button
+            onClick={() => setShowModes(!showModes)}
+            className={`w-full md:hidden text-center font-medium text-sm py-1 mb-1 transition-all duration-200
+              ${showModes ? "text-blue-600 bg-blue-100" : "text-slate-700 hover:bg-slate-100"}
+            `}
+          >
+            Modes{" "}
+            <span
+              className={`inline-block transform transition-transform duration-200 ${
+                showModes ? "rotate-180 text-blue-600" : "rotate-0"
+              }`}
+            >
+              ▲
+            </span>
+          </button>
+
+          {/* Buttons — always visible on desktop */}
+          <div
+            className={`flex flex-wrap justify-center md:justify-start gap-2 transition-all duration-300 overflow-hidden ${
+              showModes ? "max-h-64 opacity-100" : "max-h-0 opacity-0 md:max-h-none md:opacity-100"
+            }`}>
+            <button
+              className={`px-2 py-1 rounded transition-all duration-200 hover:scale-105 hover:shadow-md ${
+                mode === "add-master" ? "bg-blue-600 text-white" : "bg-gray-100"
+              } ${animatingMode === "add-master" ? "animate-pulse" : animatingMode === "active-add-master" ? "animate-bounce" : ""}`}
+              onClick={() => {
+                if (mode === "add-master") {
+                  setAnimatingMode("active-add-master");
+                  setTimeout(() => setAnimatingMode(null), 500);
+                } else {
+                  setMode("add-master");
+                  setAnimatingMode("add-master");
+                  setTimeout(() => setAnimatingMode(null), 500);
+                }
+              }}
+            >
+              Add Masters
+            </button>
+            <button
+              className={`px-2 py-1 rounded transition-all duration-200 hover:scale-105 hover:shadow-md ${
+                mode === "add-slave" ? "bg-yellow-500 text-white" : "bg-gray-100"
+              } ${animatingMode === "add-slave" ? "animate-pulse" : animatingMode === "active-add-slave" ? "animate-bounce" : ""}`}
+              onClick={() => {
+                if (mode === "add-slave") {
+                  setAnimatingMode("active-add-slave");
+                  setTimeout(() => setAnimatingMode(null), 500);
+                } else {
+                  setMode("add-slave");
+                  setAnimatingMode("add-slave");
+                  setTimeout(() => setAnimatingMode(null), 500);
+                }
+              }}
+            >
+              Add Secondaries
+            </button>
+            <button
+              className={`px-2 py-1 rounded transition-all duration-200 hover:scale-105 hover:shadow-md ${
+                mode === "add-receiver" ? "bg-green-600 text-white" : "bg-gray-100"
+              } ${animatingMode === "add-receiver" ? "animate-pulse" : animatingMode === "active-add-receiver" ? "animate-bounce" : ""}`}
+              onClick={() => {
+                if (mode === "add-receiver") {
+                  setAnimatingMode("active-add-receiver");
+                  setTimeout(() => setAnimatingMode(null), 500);
+                } else {
+                  setMode("add-receiver");
+                  setAnimatingMode("add-receiver");
+                  setTimeout(() => setAnimatingMode(null), 500);
+                }
+              }}
+            >
+              Add Receivers
+            </button>
+            <button
+              className={`px-2 py-1 rounded transition-all duration-200 hover:scale-105 hover:shadow-md ${
+                mode === "pan" ? "bg-slate-600 text-white" : "bg-gray-100"
+              } ${animatingMode === "pan" ? "animate-pulse" : animatingMode === "active-pan" ? "animate-bounce" : ""}`}
+              onClick={() => {
+                if (mode === "pan") {
+                  setAnimatingMode("active-pan");
+                  setTimeout(() => setAnimatingMode(null), 500);
+                } else {
+                  setMode("pan");
+                  setAnimatingMode("pan");
+                  setTimeout(() => setAnimatingMode(null), 500);
+                }
+              }}
+            >
+              Pan/Zoom
+            </button>
+          </div>
         </div>
 
-        <div className="ml-auto flex flex-wrap gap-2 w-full md:w-auto justify-end mt-2 md:mt-0">
-          <button onClick={()=>computeGrid(200,200)} className="px-3 py-1 rounded bg-indigo-600 text-white transition-all duration-200 hover:scale-105 hover:shadow-md">Compute Grid (WebWorker)</button>
-          <button onClick={simulatePulsesAtReceivers} className="px-3 py-1 rounded bg-emerald-600 text-white transition-all duration-200 hover:scale-105 hover:shadow-md">Simulate Pulses</button>
-          <button onClick={()=>estimateReceiverLocationFromTDOA(0)} className="px-3 py-1 rounded bg-yellow-500 text-black transition-all duration-200 hover:scale-105 hover:shadow-md">Estimate Rx (TDOA)</button>
-          <button onClick={exportScenario} className="px-3 py-1 rounded bg-amber-400 transition-all duration-200 hover:scale-105 hover:shadow-md">Export GeoJSON</button>
-          <button onClick={resetSimulation} className="px-3 py-1 rounded bg-red-500 text-white transition-all duration-200 hover:scale-105 hover:shadow-md">Reset Simulation</button>
+        {/* === Action Buttons Group === */}
+        <div className="ml-auto w-full md:w-auto md:bg-transparent bg-white rounded-xl shadow-sm md:shadow-none p-2 mt-2 md:mt-0">
+          {/* Mobile toggle header */}
+          <button
+            onClick={() => setShowActions(!showActions)}
+            className={`w-full md:hidden text-center font-medium text-sm py-1 mb-1 transition-all duration-200
+              ${showActions ? "text-green-600 bg-green-100" : "text-slate-700 hover:bg-slate-100"}
+            `}
+          >
+            Actions{" "}
+            <span
+              className={`inline-block transform transition-transform duration-200 ${
+                showActions ? "rotate-180 text-green-600" : "rotate-0"
+              }`}
+            >
+              ▲
+            </span>
+          </button>
+
+          {/* Buttons — always visible on desktop */}
+          <div
+            className={`flex flex-wrap justify-center md:justify-end gap-2 transition-all duration-300 overflow-hidden ${
+              showActions
+                ? "max-h-96 opacity-100"
+                : "max-h-0 opacity-0 md:max-h-none md:opacity-100"
+            }`}
+          >
+            <button
+              onClick={() => computeGrid(200, 200)}
+              className="px-3 py-1 rounded bg-indigo-600 text-white transition-all duration-200 hover:scale-105 hover:shadow-md"
+            >
+              Compute
+            </button>
+            <button
+              onClick={simulatePulsesAtReceivers}
+              className="px-3 py-1 rounded bg-emerald-600 text-white transition-all duration-200 hover:scale-105 hover:shadow-md"
+            >
+              Simulate
+            </button>
+            <button
+              onClick={() => estimateReceiverLocationFromTDOA(0)}
+              className="px-3 py-1 rounded bg-yellow-500 text-black transition-all duration-200 hover:scale-105 hover:shadow-md"
+            >
+              Estimate Rx
+            </button>
+            <button
+              onClick={exportScenario}
+              className="px-3 py-1 rounded bg-amber-400 transition-all duration-200 hover:scale-105 hover:shadow-md"
+            >
+              Export GeoJSON
+            </button>
+            <button
+              onClick={resetSimulation}
+              className="px-3 py-1 rounded bg-red-500 text-white transition-all duration-200 hover:scale-105 hover:shadow-md"
+            >
+              Reset Sims
+            </button>
+          </div>
         </div>
       </div>
+
 
       <div className="flex-1 flex flex-col md:flex-row gap-2 overflow-hidden">
         <div className="w-full md:w-3/4 h-[400px] md:h-auto" ref={mapContainer} />
