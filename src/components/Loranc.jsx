@@ -459,6 +459,22 @@ export default function LoranOfflineSimulator({ tileUrlTemplate = TILE_URL_TEMPL
       if (type === 'receiver') setReceivers(prev=> prev.map(p=> p.label===label ? {...p, lat: lnglat.lat, lng: lnglat.lng} : p));
     });
 
+    // Add click to delete marker when in pan mode
+    el.addEventListener('click', (e) => {
+      e.stopPropagation(); // Prevent map click
+      if (modeRef.current === 'pan') {
+        marker.remove();
+        delete markers.current[label];
+        if (type === 'master') {
+          setMasters(prev => prev.filter(m => m.label !== label));
+        } else if (type === 'slave') {
+          setSlaves(prev => prev.filter(s => s.label !== label));
+        } else if (type === 'receiver') {
+          setReceivers(prev => prev.filter(r => r.label !== label));
+        }
+      }
+    });
+
     markers.current[label] = marker;
   }, [setMasters, setSlaves, setReceivers]);
 
@@ -1004,7 +1020,7 @@ export default function LoranOfflineSimulator({ tileUrlTemplate = TILE_URL_TEMPL
                 }
               }}
             >
-              Pan
+              Del. Mark
             </button>
           </div>
         </div>
