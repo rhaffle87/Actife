@@ -135,13 +135,13 @@ const Tutorials = ({ setActiveSection }) => {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-zinc-900">
       {/* Header */}
-      <div className="bg-white shadow-sm">
+      <div className="bg-zinc-800 shadow-sm">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
           <div className="text-center">
-            <h1 className="text-4xl font-bold text-gray-900 mb-4">Interactive Tutorials</h1>
-            <p className="text-xl text-gray-600 max-w-3xl mx-auto">
+            <h1 className="text-4xl font-bold text-white mb-4">Interactive Tutorials</h1>
+            <p className="text-xl text-white max-w-3xl mx-auto">
               Comprehensive guides and hands-on tutorials for all AI/ML features.
               Learn by doing with step-by-step instructions and interactive examples.
             </p>
@@ -155,7 +155,7 @@ const Tutorials = ({ setActiveSection }) => {
           {tutorials.map((tutorial) => {
             const Icon = tutorial.icon;
             return (
-              <div key={tutorial.id} className="bg-white rounded-lg shadow-md hover:shadow-lg transition-shadow">
+              <div key={tutorial.id} className="bg-zinc-800 rounded-lg shadow-md hover:shadow-lg transition-shadow">
                 <div className="p-6">
                   <div className="flex items-center justify-between mb-4">
                     <div className={`p-3 rounded-lg ${getDifficultyColor(tutorial.difficulty)}`}>
@@ -165,18 +165,18 @@ const Tutorials = ({ setActiveSection }) => {
                       <span className={`inline-block px-2 py-1 text-xs font-semibold rounded-full ${getDifficultyColor(tutorial.difficulty)}`}>
                         {tutorial.difficulty}
                       </span>
-                      <p className="text-sm text-gray-500 mt-1">{tutorial.duration}</p>
+                      <p className="text-sm text-gray-50 mt-1">{tutorial.duration}</p>
                     </div>
                   </div>
 
-                  <h3 className="text-xl font-semibold text-gray-900 mb-2">{tutorial.title}</h3>
-                  <p className="text-gray-600 mb-4">{tutorial.description}</p>
+                  <h3 className="text-xl font-semibold text-white mb-2">{tutorial.title}</h3>
+                  <p className="text-white mb-4">{tutorial.description}</p>
 
                   <div className="mb-4">
-                    <h4 className="text-sm font-medium text-gray-900 mb-2">Topics Covered:</h4>
+                    <h4 className="text-sm font-medium text-white mb-2">Topics Covered:</h4>
                     <div className="flex flex-wrap gap-1">
                       {tutorial.topics.map((topic, index) => (
-                        <span key={index} className="inline-block bg-blue-100 text-blue-800 text-xs px-2 py-1 rounded">
+                        <span key={index} className="inline-block bg-blue-100 text-zinc-900 text-xs px-2 py-1 rounded">
                           {topic}
                         </span>
                       ))}
@@ -184,8 +184,8 @@ const Tutorials = ({ setActiveSection }) => {
                   </div>
 
                   <div className="mb-6">
-                    <h4 className="text-sm font-medium text-gray-900 mb-2">Learning Steps:</h4>
-                    <ol className="text-sm text-gray-600 space-y-1">
+                    <h4 className="text-sm font-medium text-white mb-2">Learning Steps:</h4>
+                    <ol className="text-sm text-white space-y-1">
                       {tutorial.steps.map((step, index) => (
                         <li key={index} className="flex items-start">
                           <span className="inline-flex w-4 h-4 bg-blue-500 text-white text-xs rounded-full items-center justify-center mr-2 mt-0.5 shrink-0">
@@ -212,17 +212,17 @@ const Tutorials = ({ setActiveSection }) => {
       </div>
 
       {/* Quick Start Section */}
-      <div className="bg-blue-50">
+      <div className="bg-zinc-800">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
           <div className="text-center">
-            <h2 className="text-3xl font-bold text-gray-900 mb-8">Quick Start Guide</h2>
+            <h2 className="text-3xl font-bold text-white mb-8">Quick Start Guide</h2>
             <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
               <div className="text-center">
                 <div className="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-4">
                   <span className="text-2xl font-bold text-blue-600">1</span>
                 </div>
-                <h3 className="text-lg font-semibold text-gray-900 mb-2">Choose a Feature</h3>
-                <p className="text-gray-600">
+                <h3 className="text-lg font-semibold text-white mb-2">Choose a Feature</h3>
+                <p className="text-white">
                   Select any feature from the navigation menu above to explore interactive demos.
                 </p>
               </div>
@@ -230,8 +230,8 @@ const Tutorials = ({ setActiveSection }) => {
                 <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
                   <span className="text-2xl font-bold text-green-600">2</span>
                 </div>
-                <h3 className="text-lg font-semibold text-gray-900 mb-2">Follow Tutorials</h3>
-                <p className="text-gray-600">
+                <h3 className="text-lg font-semibold text-white mb-2">Follow Tutorials</h3>
+                <p className="text-white">
                   Use the step-by-step tutorials to understand how each feature works.
                 </p>
               </div>
@@ -239,8 +239,8 @@ const Tutorials = ({ setActiveSection }) => {
                 <div className="w-16 h-16 bg-purple-100 rounded-full flex items-center justify-center mx-auto mb-4">
                   <span className="text-2xl font-bold text-purple-600">3</span>
                 </div>
-                <h3 className="text-lg font-semibold text-gray-900 mb-2">Experiment</h3>
-                <p className="text-gray-600">
+                <h3 className="text-lg font-semibold text-white mb-2">Experiment</h3>
+                <p className="text-white">
                   Modify parameters and see real-time results of your changes.
                 </p>
               </div>
@@ -248,8 +248,8 @@ const Tutorials = ({ setActiveSection }) => {
                 <div className="w-16 h-16 bg-orange-100 rounded-full flex items-center justify-center mx-auto mb-4">
                   <span className="text-2xl font-bold text-orange-600">4</span>
                 </div>
-                <h3 className="text-lg font-semibold text-gray-900 mb-2">Learn & Apply</h3>
-                <p className="text-gray-600">
+                <h3 className="text-lg font-semibold text-white mb-2">Learn & Apply</h3>
+                <p className="text-white">
                   Apply what you've learned to build your own AI/ML projects.
                 </p>
               </div>
