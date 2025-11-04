@@ -1044,7 +1044,7 @@ export default function LoranOfflineSimulator({ tileUrlTemplate = TILE_URL_TEMPL
             </button>
             <button
               onClick={simulatePulsesAtReceivers}
-              className="px-3 py-1 rounded bg-emerald-600 text-white transition-all duration-200 hover:scale-105 hover:shadow-md"
+              className="px-3 py-1 rounded bg-emerald-800 text-white transition-all duration-200 hover:scale-105 hover:shadow-md"
             >
               Simulate
             </button>
@@ -1062,7 +1062,7 @@ export default function LoranOfflineSimulator({ tileUrlTemplate = TILE_URL_TEMPL
             </button>
             <button
               onClick={resetSimulation}
-              className="px-3 py-1 rounded bg-red-500 text-white transition-all duration-200 hover:scale-105 hover:shadow-md"
+              className="px-3 py-1 rounded bg-red-800 text-white transition-all duration-200 hover:scale-105 hover:shadow-md"
             >
               Reset Sims
             </button>

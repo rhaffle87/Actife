@@ -1,4 +1,4 @@
-import React, { lazy, Suspense } from 'react'
+import { lazy, Suspense } from 'react'
 import { Routes, Route, useLocation } from 'react-router-dom'
 import Navbar from './components/Navbar'
 import Home from './components/Home'
@@ -50,23 +50,35 @@ function App() {
   const activeSection = getActiveSection(location.pathname)
 
   return (
-    <div className="min-h-screen bg-white">
-      <Navbar activeSection={activeSection} />
-      <Suspense fallback={<div className="p-8 text-center text-gray-600">Loading...</div>}>
-        <Routes>
-          <Route path="/" element={<Home />} />
-          <Route path="/tutorials" element={<Tutorials />} />
-          <Route path="/neural-network" element={<NeuralNetwork />} />
-          <Route path="/image-processing" element={<ImageProcessing />} />
-          <Route path="/color-science" element={<ColorScience />} />
-          <Route path="/signal-processing" element={<SignalProcessing />} />
-          <Route path="/loran-c" element={<Loranc />} />
-          <Route path="/linear-regression" element={<LinearRegression />} />
-          <Route path="/machine-learning" element={<MachineLearning />} />
-          <Route path="/mediapipe" element={<MediaPipe />} />
-          <Route path="/credits" element={<Credits />} />
-        </Routes>
-      </Suspense>
+    <div className="min-h-screen bg-white flex flex-col">
+      {/* Accessible banner landmark */}
+      <header role="banner">
+        <Navbar activeSection={activeSection} />
+      </header>
+
+      {/* Main landmark for primary page content */}
+      <main id="main-content" role="main" className="grow">
+        <Suspense fallback={<div className="p-8 text-center text-gray-600">Loading...</div>}>
+          <Routes>
+            <Route path="/" element={<Home />} />
+            <Route path="/tutorials" element={<Tutorials />} />
+            <Route path="/neural-network" element={<NeuralNetwork />} />
+            <Route path="/image-processing" element={<ImageProcessing />} />
+            <Route path="/color-science" element={<ColorScience />} />
+            <Route path="/signal-processing" element={<SignalProcessing />} />
+            <Route path="/loran-c" element={<Loranc />} />
+            <Route path="/linear-regression" element={<LinearRegression />} />
+            <Route path="/machine-learning" element={<MachineLearning />} />
+            <Route path="/mediapipe" element={<MediaPipe />} />
+            <Route path="/credits" element={<Credits />} />
+          </Routes>
+        </Suspense>
+      </main>
+
+      {/* Optional footer landmark */}
+      <footer role="contentinfo" className="py-4 text-center text-sm text-gray-500 border-t">
+        © 2025 ACTIFE — Artificial Computing Toolkit for Intelligent Feature Experiments
+      </footer>
     </div>
   )
 }
