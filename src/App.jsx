@@ -1,4 +1,4 @@
-import { lazy, Suspense } from 'react'
+import React, { lazy, Suspense } from 'react'
 import { Routes, Route, useLocation } from 'react-router-dom'
 import Navbar from './components/Navbar'
 import Home from './components/Home'
@@ -76,8 +76,8 @@ function App() {
       </main>
 
       {/* Optional footer landmark */}
-      <footer role="contentinfo" className="py-4 text-center text-sm text-gray-500 border-t">
-        © 2025 ACTIFE — Artificial Computing Toolkit for Intelligent Feature Experiments
+      <footer role="contentinfo" className="py-4 text-center text-sm bg-zinc-800 text-white border-t">
+        © 2025 ACTIFE - Artificial Computing Toolkit for Intelligent Feature Experiments
       </footer>
     </div>
   )

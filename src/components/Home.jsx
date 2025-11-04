@@ -1,7 +1,8 @@
-import { Brain, Image, Palette, BarChart3, Zap, Code, Github, BookOpen } from 'lucide-react';
+import { Brain, Image, Palette, BarChart3, Zap, Code, Github, BookOpen, Calculator } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import logo from '../assets/logo.png';
 import Aurora from './Aurora';
+import CardSwap, { Card } from './CardSwap';
 
 const Home = () => {
   const features = [
@@ -73,7 +74,7 @@ const Home = () => {
               </h1>
               <br></br>
 
-              <p className="text-lg md:text-xl mb-8 text-blue-100 max-w-4xl mx-auto">
+              <p className="text-lg md:text-xl mb-8 text-white max-w-4xl mx-auto">
                 Explore machine learning algorithms, image processing techniques, and computer vision applications
                 through interactive web interfaces powered by cutting-edge AI technologies
               </p>
@@ -95,11 +96,11 @@ const Home = () => {
       </div>
 
       {/* Features Grid */}
-      <div className="bg-zinc-900 relative z-10">
+      <div className="bg-zinc-900 relative py-20">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-12">
-            <h2 className="text-3xl font-bold text-blue-50 mb-4">Explore Our Features</h2>
-            <p className="text-lg text-blue-50 max-w-2xl mx-auto">
+            <h2 className="text-3xl font-bold text-white mb-4">Explore Our Features</h2>
+            <p className="text-lg text-white max-w-2xl mx-auto">
               Interactive implementations of various AI/ML algorithms and techniques
             </p>
           </div>
@@ -109,7 +110,7 @@ const Home = () => {
               const Icon = feature.icon;
               return (
                 <div key={index} className="bg-zinc-800 rounded-lg shadow-md p-6 hover:shadow-lg transition-shadow">
-                  <div className={`inline-flex items-center justify-center w-12 h-12 rounded-lg bg-gray-100 mb-4 ${feature.color}`}>
+                  <div className={`inline-flex items-center justify-center w-12 h-12 rounded-lg bg-white mb-4 ${feature.color}`}>
                     <Icon size={24} />
                   </div>
                     <h3 h3 className="text-xl font-semibold text-white mb-2">{feature.title}</h3>
@@ -123,47 +124,83 @@ const Home = () => {
       
 
       {/* About Section */}
-      <div className="bg-zinc-900 py-20 relative z-10">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center">
-            <h2 className="text-3xl font-bold text-blue-50 mb-8">About This Project</h2>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-12 items-center">
-              <div>
-                <p className="text-lg text-white mb-6">
-                  This interactive web application brings together various AI/ML algorithms and computer vision
-                  techniques from a comprehensive repository. Each section provides hands-on experience with
-                  real implementations that you can interact with directly in your browser.
-                </p>
-                <p className="text-lg text-white mb-6">
-                  Whether you're learning about neural networks, exploring image compression algorithms, or experimenting with computer vision applications, this toolkit offers an accessible
-                  way to understand and interact with these technologies.
-                </p>
-              </div>
-              <div className="bg-gray-100 rounded-lg p-8">
-                <h3 className="text-xl font-semibold text-gray-900 mb-4">Technologies Used</h3>
-                <div className="space-y-3">
-                  <div className="flex items-center">
-                    <div className="w-3 h-3 bg-blue-500 rounded-full mr-3"></div>
-                    <span className="text-gray-700">TensorFlow.js for neural networks</span>
+      <div className="bg-zinc-900 py-35 px-6 relative overflow-hidden">
+        <div className="max-w-7xl mx-auto px-6 lg:px-8 flex flex-col-reverse lg:flex-row items-center justify-between gap-16">
+          
+          {/* Description Section (Left for desktop / Top for mobile) */}
+          <div className="order-1 lg:order-0 w-full lg:w-1/2 text-center lg:text-left space-y-6 mt-12 lg:mt-0">
+            <h2 className="text-3xl sm:text-4xl font-bold text-white">
+              About This Project
+            </h2>
+            <p className="text-zinc-300 text-base sm:text-lg leading-relaxed max-w-xl mx-auto lg:mx-0">
+              This interactive web application brings together various AI/ML algorithms and computer vision techniques from a comprehensive repository. Each section provides hands-on experience with real implementations that you can interact with directly in your browser.
+            </p>
+          </div>
+
+          {/* Card Stack Section (Right for desktop / Bottom for mobile) */}
+          <div className="order-2 lg:order-0 w-full lg:w-1/2 flex justify-center items-center">
+            <div className="w-full sm:w-[380px] md:w-[420px] lg:w-[480px]">
+              <CardSwap
+                width={540}
+                height={400}
+                cardDistance={50}
+                verticalDistance={50}
+                delay={5000}
+                pauseOnHover={true}
+                skewAmount={5}
+                easing="elastic"
+              >
+                {/* Individual Tech Cards with Lucide Icons */}
+                <Card customClass="bg-zinc-800 text-white p-6 rounded-2xl shadow-lg flex flex-col items-center justify-center">
+                  <div className="w-16 h-16 bg-blue-600/20 rounded-full flex items-center justify-center mb-4">
+                    <Brain className="w-12 h-12 text-blue-400" />
                   </div>
-                  <div className="flex items-center">
-                    <div className="w-3 h-3 bg-green-500 rounded-full mr-3"></div>
-                    <span className="text-gray-700">Canvas API for image processing</span>
+                  <h3 className="text-xl font-semibold mb-2">TensorFlow.js</h3>
+                  <p className="text-sm text-zinc-400 text-center">
+                    For neural networks and AI models
+                  </p>
+                </Card>
+
+                <Card customClass="bg-zinc-800 text-white p-6 rounded-2xl shadow-lg flex flex-col items-center justify-center">
+                  <div className="w-16 h-16 bg-green-500/20 rounded-full flex items-center justify-center mb-4">
+                    <Image className="w-12 h-12 text-green-400" />
                   </div>
-                  <div className="flex items-center">
-                    <div className="w-3 h-3 bg-purple-500 rounded-full mr-3"></div>
-                    <span className="text-gray-700">Math.js for math computations</span>
+                  <h3 className="text-xl font-semibold mb-2">Canvas API</h3>
+                  <p className="text-sm text-zinc-400 text-center">
+                    For image and signal processing
+                  </p>
+                </Card>
+
+                <Card customClass="bg-zinc-800 text-white p-6 rounded-2xl shadow-lg flex flex-col items-center justify-center">
+                  <div className="w-16 h-16 bg-purple-500/20 rounded-full flex items-center justify-center mb-4">
+                    <Calculator className="w-12 h-12 text-purple-400" />
                   </div>
-                  <div className="flex items-center">
-                    <div className="w-3 h-3 bg-orange-500 rounded-full mr-3"></div>
-                    <span className="text-gray-700">Chart.js for data visualization</span>
+                  <h3 className="text-xl font-semibold mb-2">Math.js</h3>
+                  <p className="text-sm text-zinc-400 text-center">
+                    For advanced math computations
+                  </p>
+                </Card>
+
+                <Card customClass="bg-zinc-800 text-white p-6 rounded-2xl shadow-lg flex flex-col items-center justify-center">
+                  <div className="w-16 h-16 bg-orange-500/20 rounded-full flex items-center justify-center mb-4">
+                    <BarChart3 className="w-12 h-12 text-orange-400" />
                   </div>
-                  <div className="flex items-center">
-                    <div className="w-3 h-3 bg-red-500 rounded-full mr-3"></div>
-                    <span className="text-gray-700">React for interactive UI</span>
+                  <h3 className="text-xl font-semibold mb-2">Chart.js</h3>
+                  <p className="text-sm text-zinc-400 text-center">
+                    For data visualization and plots
+                  </p>
+                </Card>
+
+                <Card customClass="bg-zinc-800 text-white p-6 rounded-2xl shadow-lg flex flex-col items-center justify-center">
+                  <div className="w-16 h-16 bg-red-500/20 rounded-full flex items-center justify-center mb-4">
+                    <Code className="w-12 h-12 text-red-400" />
                   </div>
-                </div>
-              </div>
+                  <h3 className="text-xl font-semibold mb-2">React</h3>
+                  <p className="text-sm text-zinc-400 text-center">
+                    For interactive user interfaces
+                  </p>
+                </Card>
+              </CardSwap>
             </div>
           </div>
         </div>
