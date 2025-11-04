@@ -1107,7 +1107,7 @@ export default function LoranOfflineSimulator({ tileUrlTemplate = TILE_URL_TEMPL
                 <h4 className="font-medium">How to Use LORAN-C Simulator</h4>
                 <div className="mt-2 text-xs">
                   <ol className="list-decimal ml-4 space-y-1">
-                    <li>Select mode (Add Master/Slave/Receiver) and click on map to place stations.</li>
+                    <li>Select mode (Add Masters/Secondaries/Receivers/Del. Mark) and click on map to place stations or delete markers.</li>
                     <li>Add at least one master and one slave to form baselines.</li>
                     <li>Click "Compute Grid" to generate Lines of Position (LOPs) using WebWorker.</li>
                     <li>Add receivers and simulate pulse arrivals with waveforms.</li>
