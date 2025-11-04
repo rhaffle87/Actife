@@ -905,7 +905,6 @@ export default function LoranOfflineSimulator({ tileUrlTemplate = TILE_URL_TEMPL
   const [showModes, setShowModes] = useState(false);
   const [showActions, setShowActions] = useState(false);
   const [animatingMode, setAnimatingMode] = useState(null);
-  const [animatingToggle, setAnimatingToggle] = useState(false);
 
   // UI render  
   return (
@@ -1072,140 +1071,146 @@ export default function LoranOfflineSimulator({ tileUrlTemplate = TILE_URL_TEMPL
       </div>
 
 
-      <div className="flex-1 flex flex-col md:flex-row gap-2 overflow-hidden">
-        <div className="w-full md:w-3/4 h-[400px] md:h-auto" ref={mapContainer} />
-        <aside className="w-full md:w-1/4 p-3 bg-white border-t md:border-t-0 md:border-l overflow-y-auto overflow-x-hidden h-[50vh] md:h-full">
-          <h3 className="font-semibold">Legend & Controls</h3>
-          <div className="mt-2 text-sm">
-            <div><strong>M</strong>: Master station (reference)</div>
-            <div><strong>S</strong>: Slave / secondary station</div>
-            <div><strong>R</strong>: Receiver / user device</div>
-            <div className="mt-3">Freq: {DEFAULT_FREQ / 1000} kHz</div>
-            <div>Speed of light c = {C.c.toLocaleString()} m/s</div>
-          </div>
+      {/* LORAN-C Simulator Section */}
+      <section className="block w-full">
+        <div className="w-full flex flex-col md:flex-row h-auto md:h-[calc(100vh-80px)] md:overflow-hidden overflow-auto touch-pan-y">
+          <div className="w-full md:w-3/4 h-[300px] md:h-auto shrink-0 touch-none md:touch-auto" ref={mapContainer}/>
+          {/* Sidebar */}
+          <aside className="w-full md:w-1/4 bg-white border-t md:border-t-0 md:border-l p-3 overflow-y-auto overflow-x-hidden touch-pan-y h-screen md:h-auto">
+            <div className="pb-4 border-b">
+              <h3 className="font-semibold">Legend & Controls</h3>
+              <div className="mt-2 text-sm">
+                <div><strong>M</strong>: Master station (reference)</div>
+                <div><strong>S</strong>: Slave / secondary station</div>
+                <div><strong>R</strong>: Receiver / user device</div>
+                <div className="mt-3">Freq: {DEFAULT_FREQ / 1000} kHz</div>
+                <div>Speed of light c = {C.c.toLocaleString()} m/s</div>
+              </div>
 
-          <div className="mt-4">
-            <h4 className="font-medium">How to Use LORAN-C Simulator</h4>
-            <div className="mt-2 text-xs">
-              <ol className="list-decimal ml-4 space-y-1">
-                <li>Select mode (Add Master/Slave/Receiver) and click on map to place stations.</li>
-                <li>Add at least one master and one slave to form baselines.</li>
-                <li>Click "Compute Grid" to generate Lines of Position (LOPs) using WebWorker.</li>
-                <li>Add receivers and simulate pulse arrivals with waveforms.</li>
-                <li>Use TDOA estimation to locate receivers based on time differences.</li>
-                <li>Export scenario as GeoJSON or reset simulation as needed.</li>
-              </ol>
-            </div>
-          </div>
+              <div className="mt-4">
+                <h4 className="font-medium">How to Use LORAN-C Simulator</h4>
+                <div className="mt-2 text-xs">
+                  <ol className="list-decimal ml-4 space-y-1">
+                    <li>Select mode (Add Master/Slave/Receiver) and click on map to place stations.</li>
+                    <li>Add at least one master and one slave to form baselines.</li>
+                    <li>Click "Compute Grid" to generate Lines of Position (LOPs) using WebWorker.</li>
+                    <li>Add receivers and simulate pulse arrivals with waveforms.</li>
+                    <li>Use TDOA estimation to locate receivers based on time differences.</li>
+                    <li>Export scenario as GeoJSON or reset simulation as needed.</li>
+                  </ol>
+                </div>
+              </div>
 
-          <div className="mt-4">
-            <h4 className="font-medium">Stations ({masters.length} masters, {slaves.length} slaves)</h4>
-            <div className="mt-2 text-xs space-y-1">
-              {masters.map((m,i)=> <div key={i}>[M] {m.label}: {m.lat.toFixed(5)}, {m.lng.toFixed(5)} Tx={m.txDbm} dBm</div>)}
-              {slaves.map((s,i)=> <div key={i}>[S] {s.label}: {s.lat.toFixed(5)}, {s.lng.toFixed(5)}</div>)}
-            </div>
-          </div>
+              <div className="mt-4">
+                <h4 className="font-medium">Stations ({masters.length} masters, {slaves.length} slaves)</h4>
+                <div className="mt-2 text-xs space-y-1">
+                  {masters.map((m,i)=> <div key={i}>[M] {m.label}: {m.lat.toFixed(5)}, {m.lng.toFixed(5)} Tx={m.txDbm} dBm</div>)}
+                  {slaves.map((s,i)=> <div key={i}>[S] {s.label}: {s.lat.toFixed(5)}, {s.lng.toFixed(5)}</div>)}
+                </div>
+              </div>
 
-          <div className="mt-4">
-            <h4 className="font-medium">Receivers ({receivers.length})</h4>
-            <div className="mt-2 text-xs">
-              {receivers.map((r)=> <div key={r.label}>[R] {r.label}: {r.lat.toFixed(5)}, {r.lng.toFixed(5)}</div>)}
-            </div>
-          </div>
+              <div className="mt-4">
+                <h4 className="font-medium">Receivers ({receivers.length})</h4>
+                <div className="mt-2 text-xs">
+                  {receivers.map((r)=> <div key={r.label}>[R] {r.label}: {r.lat.toFixed(5)}, {r.lng.toFixed(5)}</div>)}
+                </div>
+              </div>
 
-          <div className="mt-4">
-            <h4 className="font-medium">Grid status</h4>
-            <div className="text-xs mt-2">{gridStatus ? (gridStatus.status || 'ready') : 'not computed'}</div>
-            {gridStatus && gridStatus.maps && <div className="text-xs mt-2">Maps computed: {gridStatus.maps.length}</div>}
-          </div>
+              <div className="mt-4">
+                <h4 className="font-medium">Grid status</h4>
+                <div className="text-xs mt-2">{gridStatus ? (gridStatus.status || 'ready') : 'not computed'}</div>
+                {gridStatus && gridStatus.maps && <div className="text-xs mt-2">Maps computed: {gridStatus.maps.length}</div>}
+              </div>
 
-          <div className="mt-4">
-            <h4 className="font-medium">Noise Settings</h4>
-            <div className="mt-2 text-xs">
-              <label>
-                <input type="checkbox" checked={enableNoise} onChange={(e) => setEnableNoise(e.target.checked)} /> Enable Noise
-              </label>
-              <div className="mt-1">
-                <label>Std Dev (s): <input type="number" value={noiseStdDev} onChange={(e) => setNoiseStdDev(parseFloat(e.target.value) || 0)} step="1e-6" min="0" /></label>
+              <div className="mt-4">
+                <h4 className="font-medium">Noise Settings</h4>
+                <div className="mt-2 text-xs">
+                  <label>
+                    <input type="checkbox" checked={enableNoise} onChange={(e) => setEnableNoise(e.target.checked)} /> Enable Noise
+                  </label>
+                  <div className="mt-1">
+                    <label>Std Dev (s): <input type="number" value={noiseStdDev} onChange={(e) => setNoiseStdDev(parseFloat(e.target.value) || 0)} step="1e-6" min="0" /></label>
+                  </div>
+                </div>
+              </div>
+
+              {simulationResults && (
+                <div className="mt-4">
+                  <h4 className="font-medium">Pulse Simulation Results</h4>
+                  {simulationResults.map((result, idx) => {
+                    const isExpanded = expandedResults[result.receiver] || false;
+                    return (
+                      <div key={idx} className="mt-2 border rounded p-2">
+                        <div className="flex items-center justify-between">
+                          <div className="text-sm font-medium">[R] {result.receiver}</div>
+                          <button
+                            onClick={() => setExpandedResults(prev => ({ ...prev, [result.receiver]: !prev[result.receiver] }))}
+                            className="text-xs px-2 py-1 bg-gray-200 rounded hover:bg-gray-300"
+                          >
+                            {isExpanded ? 'Shrink' : 'Expand'}
+                          </button>
+                        </div>
+                        {isExpanded && (
+                          <>
+                            <div className="text-xs mt-1">
+                              {result.arrivals.map((arrival, i) => (
+                                <div key={i}>
+                                  [{arrival.type.charAt(0).toUpperCase()}] {arrival.station}: {(arrival.arrivalSec * 1e6).toFixed(3)}μs, {arrival.txDbm}dBm
+                                </div>
+                              ))}
+                            </div>
+                            <div className="mt-2">
+                              <div className="text-xs font-medium">Waveforms:</div>
+                              {result.arrivals.map((arrival, i) => {
+                                const pulseSamples = 1000;
+                                const pulseWaveform = new Array(pulseSamples).fill(0);
+                                const startSample = Math.floor((arrival.arrivalSec % 0.001) * 1000000);
+                                const endSample = Math.floor((arrival.arrivalSec % 0.001 + 0.0001) * 1000000);
+                                const amplitude = Math.pow(10, arrival.txDbm / 20);
+
+                                for (let j = startSample; j < endSample && j < pulseSamples; j++) {
+                                  const t = (j - startSample) / 1000000;
+                                  const pulseShape = 0.5 * (1 + Math.cos(Math.PI * t / 0.0001));
+                                  pulseWaveform[j] += amplitude * pulseShape;
+                                }
+
+                                const maxVal = Math.max(...pulseWaveform) || 1;
+                                return (
+                                  <div key={i} className="mt-1">
+                                    <div className="text-xs">[{arrival.type.charAt(0).toUpperCase()}] {arrival.station}</div>
+                                    <svg width="100%" height="40" viewBox="0 0 1000 40" className="border">
+                                      <polyline
+                                        fill="none"
+                                        stroke={arrival.type === 'master' ? '#1e90ff' : '#f59e0b'}
+                                        strokeWidth="1"
+                                        points={pulseWaveform.map((val, j) => `${(j / pulseSamples) * 1000},${20 - (val / maxVal) * 20}`).join(' ')}
+                                      />
+                                    </svg>
+                                  </div>
+                                );
+                              })}
+                            </div>
+                          </>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+
+              <div className="mt-4 text-xs">
+                <h4 className="font-medium">Next steps &amp; tips</h4>
+                <ol className="list-decimal ml-4 mt-2">
+                  <li>Host local tiles (MBTiles to tileserver) and set VITE_TILE_URL_TEMPLATE to your server.</li>
+                  <li>For high-precision hyperbola contours, compute contours from the Float32 grids (marching squares) and draw as GeoJSON.</li>
+                  <li>Integrate ionospheric skywave windows and seasonal conductivity datasets to model long-range reception.</li>
+                  <li>To visualize in 3D, connect deck.gl or Three.js with elevation tiles — a placeholder WebGL layer is prepared.</li>
+                </ol>
               </div>
             </div>
-          </div>
-
-          {simulationResults && (
-            <div className="mt-4">
-              <h4 className="font-medium">Pulse Simulation Results</h4>
-              {simulationResults.map((result, idx) => {
-                const isExpanded = expandedResults[result.receiver] || false;
-                return (
-                  <div key={idx} className="mt-2 border rounded p-2">
-                    <div className="flex items-center justify-between">
-                      <div className="text-sm font-medium">[R] {result.receiver}</div>
-                      <button
-                        onClick={() => setExpandedResults(prev => ({ ...prev, [result.receiver]: !prev[result.receiver] }))}
-                        className="text-xs px-2 py-1 bg-gray-200 rounded hover:bg-gray-300"
-                      >
-                        {isExpanded ? 'Shrink' : 'Expand'}
-                      </button>
-                    </div>
-                    {isExpanded && (
-                      <>
-                        <div className="text-xs mt-1">
-                          {result.arrivals.map((arrival, i) => (
-                            <div key={i}>
-                              [{arrival.type.charAt(0).toUpperCase()}] {arrival.station}: {(arrival.arrivalSec * 1e6).toFixed(3)}μs, {arrival.txDbm}dBm
-                            </div>
-                          ))}
-                        </div>
-                        <div className="mt-2">
-                          <div className="text-xs font-medium">Waveforms:</div>
-                          {result.arrivals.map((arrival, i) => {
-                            const pulseSamples = 1000;
-                            const pulseWaveform = new Array(pulseSamples).fill(0);
-                            const startSample = Math.floor((arrival.arrivalSec % 0.001) * 1000000);
-                            const endSample = Math.floor((arrival.arrivalSec % 0.001 + 0.0001) * 1000000);
-                            const amplitude = Math.pow(10, arrival.txDbm / 20);
-
-                            for (let j = startSample; j < endSample && j < pulseSamples; j++) {
-                              const t = (j - startSample) / 1000000;
-                              const pulseShape = 0.5 * (1 + Math.cos(Math.PI * t / 0.0001));
-                              pulseWaveform[j] += amplitude * pulseShape;
-                            }
-
-                            const maxVal = Math.max(...pulseWaveform) || 1;
-                            return (
-                              <div key={i} className="mt-1">
-                                <div className="text-xs">[{arrival.type.charAt(0).toUpperCase()}] {arrival.station}</div>
-                                <svg width="100%" height="40" viewBox="0 0 1000 40" className="border">
-                                  <polyline
-                                    fill="none"
-                                    stroke={arrival.type === 'master' ? '#1e90ff' : '#f59e0b'}
-                                    strokeWidth="1"
-                                    points={pulseWaveform.map((val, j) => `${(j / pulseSamples) * 1000},${20 - (val / maxVal) * 20}`).join(' ')}
-                                  />
-                                </svg>
-                              </div>
-                            );
-                          })}
-                        </div>
-                      </>
-                    )}
-                  </div>
-                );
-              })}
-            </div>
-          )}
-
-          <div className="mt-4 text-xs">
-            <h4 className="font-medium">Next steps &amp; tips</h4>
-            <ol className="list-decimal ml-4 mt-2">
-              <li>Host local tiles (MBTiles to tileserver) and set VITE_TILE_URL_TEMPLATE to your server.</li>
-              <li>For high-precision hyperbola contours, compute contours from the Float32 grids (marching squares) and draw as GeoJSON.</li>
-              <li>Integrate ionospheric skywave windows and seasonal conductivity datasets to model long-range reception.</li>
-              <li>To visualize in 3D, connect deck.gl or Three.js with elevation tiles — a placeholder WebGL layer is prepared.</li>
-            </ol>
-          </div>
-        </aside>
-      </div>
+          </aside>
+        </div>
+      </section>
     </div>
   );
 }
