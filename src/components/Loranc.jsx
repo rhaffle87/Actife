@@ -648,9 +648,22 @@ export default function LoranOfflineSimulator({ tileUrlTemplate = TILE_URL_TEMPL
 
     const features = [];
 
-    masters.forEach((m, midx) => {
-      const [lngM, latM] = [m.lng, m.lat];
-      slaves.forEach((s, sidx) => {
+    slaves.forEach((s, sidx) => {
+      let closestMaster = null;
+      let minDistance = Infinity;
+      let closestMidx = -1;
+
+      masters.forEach((m, midx) => {
+        const dist = haversine(m, s);
+        if (dist < minDistance && dist <= 1000000) { // within 1000km
+          minDistance = dist;
+          closestMaster = m;
+          closestMidx = midx;
+        }
+      });
+
+      if (closestMaster) {
+        const [lngM, latM] = [closestMaster.lng, closestMaster.lat];
         const [lngS, latS] = [s.lng, s.lat];
 
         // Calculate baseline extension
@@ -672,16 +685,18 @@ export default function LoranOfflineSimulator({ tileUrlTemplate = TILE_URL_TEMPL
             ],
           },
           properties: {
-            id: `baseline-${midx}-${sidx}`,
+            id: `baseline-${closestMidx}-${sidx}`,
             type: 'baseline',
-            masterLabel: m.label,
+            masterLabel: closestMaster.label,
             slaveLabel: s.label,
-            masterIndex: midx,
+            masterIndex: closestMidx,
             slaveIndex: sidx,
           },
         });
-      });
+      }
     });
+
+    if (features.length === 0) return;
 
     const geojson = {
       type: 'FeatureCollection',
