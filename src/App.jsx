@@ -50,7 +50,7 @@ function App() {
   const activeSection = getActiveSection(location.pathname)
 
   return (
-    <div className="min-h-screen bg-zinc-900">
+    <div className="min-h-screen bg-white">
       <Navbar activeSection={activeSection} />
       <Suspense fallback={<div className="p-8 text-center text-gray-600">Loading...</div>}>
         <Routes>
