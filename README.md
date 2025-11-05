@@ -1,4 +1,4 @@
-# AI/ML Interactive Web Application
+# AI/ML Interactive Web Applications
 
 A comprehensive interactive web application showcasing various AI/ML algorithms and concepts, built with React, Vite, and Tailwind CSS. This project demonstrates implementations of neural networks, linear regression, image processing, computer vision, signal processing, color science, and more through an intuitive web interface.
 
