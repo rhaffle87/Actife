@@ -2,6 +2,7 @@ import React, { useCallback, useEffect, useRef, useState } from "react";
 import maplibregl from "maplibre-gl";
 import "maplibre-gl/dist/maplibre-gl.css";
 import proj4 from "proj4";
+import Papa from "papaparse";
 
 const C = { c: 299792458 };
 const TILE_URL_TEMPLATE = import.meta.env.VITE_TILE_URL_TEMPLATE || "https://tile.openstreetmap.org/{z}/{x}/{y}.png";
@@ -937,6 +938,67 @@ export default function LoranOfflineSimulator({ tileUrlTemplate = TILE_URL_TEMPL
   const [showActions, setShowActions] = useState(false);
   const [animatingMode, setAnimatingMode] = useState(null);
 
+  // CSV import handler
+  const handleCsvImport = useCallback((event) => {
+    const file = event.target.files[0];
+    if (!file) return;
+
+    Papa.parse(file, {
+      header: true,
+      skipEmptyLines: true,
+      complete: (results) => {
+        const data = results.data;
+        let validRows = 0;
+        let errors = [];
+
+        data.forEach((row, index) => {
+          const role = row.role ? row.role.toLowerCase().trim() : '';
+          const lat = parseFloat(row.lat);
+          const lng = parseFloat(row.lng);
+
+          if (!role || !['master', 'slave', 'receiver'].includes(role)) {
+            errors.push(`Row ${index + 1}: Invalid role '${row.role}'. Must be 'master', 'slave', or 'receiver'.`);
+            return;
+          }
+
+          if (isNaN(lat) || lat < -90 || lat > 90) {
+            errors.push(`Row ${index + 1}: Invalid latitude '${row.lat}'. Must be a number between -90 and 90.`);
+            return;
+          }
+
+          if (isNaN(lng) || lng < -180 || lng > 180) {
+            errors.push(`Row ${index + 1}: Invalid longitude '${row.lng}'. Must be a number between -180 and 180.`);
+            return;
+          }
+
+          const point = { lat, lng };
+
+          if (role === 'master') {
+            addMaster(point);
+          } else if (role === 'slave') {
+            addSlave(point);
+          } else if (role === 'receiver') {
+            addReceiver(point);
+          }
+
+          validRows++;
+        });
+
+        if (errors.length > 0) {
+          alert(`CSV import completed with ${validRows} valid rows. Errors:\n${errors.join('\n')}`);
+        } else {
+          alert(`CSV import successful! Added ${validRows} stations.`);
+        }
+      },
+      error: (error) => {
+        alert(`Error parsing CSV: ${error.message}`);
+      }
+    });
+
+    // Reset file input
+    event.target.value = '';
+  }, [addMaster, addSlave, addReceiver]);
+
   // UI render  
   return (
     <div className="w-full h-full flex flex-col">
@@ -1001,7 +1063,7 @@ export default function LoranOfflineSimulator({ tileUrlTemplate = TILE_URL_TEMPL
                 }
               }}
             >
-              Add Secondaries
+              Add Slaves
             </button>
             <button
               className={`px-2 py-1 rounded transition-all duration-200 hover:scale-105 hover:shadow-md ${
@@ -1075,28 +1137,42 @@ export default function LoranOfflineSimulator({ tileUrlTemplate = TILE_URL_TEMPL
             </button>
             <button
               onClick={simulatePulsesAtReceivers}
-              className="px-3 py-1 rounded bg-emerald-800 text-white transition-all duration-200 hover:scale-105 hover:shadow-md"
+              className="px-3 py-1 rounded bg-emerald-600 text-white transition-all duration-200 hover:scale-105 hover:shadow-md"
             >
               Simulate
             </button>
             <button
               onClick={() => estimateReceiverLocationFromTDOA(0)}
-              className="px-3 py-1 rounded bg-yellow-500 text-black transition-all duration-200 hover:scale-105 hover:shadow-md"
+              className="px-3 py-1 rounded bg-fuchsia-600 text-white transition-all duration-200 hover:scale-105 hover:shadow-md"
             >
               Estimate Rx
             </button>
             <button
               onClick={exportScenario}
-              className="px-3 py-1 rounded bg-amber-400 transition-all duration-200 hover:scale-105 hover:shadow-md"
+              className="px-3 py-1 rounded bg-amber-600 text-white transition-all duration-200 hover:scale-105 hover:shadow-md"
             >
-              Export GeoJSON
+              Export
             </button>
             <button
               onClick={resetSimulation}
-              className="px-3 py-1 rounded bg-red-800 text-white transition-all duration-200 hover:scale-105 hover:shadow-md"
+              className="px-3 py-1 rounded bg-red-600 text-white transition-all duration-200 hover:scale-105 hover:shadow-md"
             >
               Reset Sims
             </button>
+            <input
+              type="file"
+              accept=".csv"
+              onChange={handleCsvImport}
+              className="px-3 py-1 rounded bg-purple-600 text-white transition-all duration-200 hover:scale-105 hover:shadow-md"
+              style={{ display: 'none' }}
+              id="csv-import"
+            />
+            <label
+              htmlFor="csv-import"
+              className="px-3 py-1 rounded bg-purple-600 text-white transition-all duration-200 hover:scale-105 hover:shadow-md cursor-pointer"
+            >
+              Import
+            </label>
           </div>
         </div>
       </div>
@@ -1122,13 +1198,18 @@ export default function LoranOfflineSimulator({ tileUrlTemplate = TILE_URL_TEMPL
                 <h4 className="font-medium">How to Use LORAN-C Simulator</h4>
                 <div className="mt-2 text-xs">
                   <ol className="list-decimal ml-4 space-y-1">
-                    <li>Select mode (Add Masters/Secondaries/Receivers/Del. Mark) and click on map to place stations or delete markers.</li>
+                    <li>Select mode (Add Masters/Slaves/Receivers/Del. Mark) and click on map to place stations or delete markers, or import stations from a CSV file using the "Import" button.</li>
                     <li>Add at least one master and one slave to form baselines.</li>
-                    <li>Click "Compute Grid" to generate Lines of Position (LOPs) using WebWorker.</li>
+                    <li>Click "Compute" to generate Lines of Position (LOPs) using WebWorker.</li>
                     <li>Add receivers and simulate pulse arrivals with waveforms.</li>
                     <li>Use TDOA estimation to locate receivers based on time differences.</li>
-                    <li>Export scenario as GeoJSON or reset simulation as needed.</li>
+                    <li>Export scenario as GeoJSON file or reset simulation as needed.</li>
                   </ol>
+                  <div className="mt-2">
+                    <strong>CSV Import Format:</strong> The CSV file should have headers <code>role,lat,lng</code>. Role must be 'master', 'slave', or 'receiver'. Lat must be between -90 and 90, lng between -180 and 180.<br />
+                    Example:<br />
+                    <code>role,lat,lng<br />master,-6.200000,106.816666<br />slave,-6.300000,106.916666<br />receiver,-6.250000,106.866666</code>
+                  </div>
                 </div>
               </div>
 
