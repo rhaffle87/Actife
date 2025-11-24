@@ -18,6 +18,7 @@ const Navbar = ({ activeSection }) => {
     { id: 'loran-c', label: 'LORAN-C Simulator', icon: MapPin },
     { id: 'machine-learning', label: 'Machine Learning', icon: Cpu },
     { id: 'mediapipe', label: 'MediaPipe', icon: Video },
+    { id: 'eloran', label: 'eLORAN Simulator', icon: MapPin },
   ];
 
   // Close dropdown when clicking outside

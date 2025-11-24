@@ -84,41 +84,49 @@ const NeuralNetwork = () => {
   const trainModel = async () => {
     if (!tf || !model) return;
 
+    let xs, ys, predTensor;
     setIsTraining(true);
-    const { x, y } = generateData();
-    const xs = tf.tensor2d(x);
-    const ys = tf.tensor1d(y);
+    try {
+      const { x, y } = generateData();
+      xs = tf.tensor2d(x);
+      ys = tf.tensor1d(y);
 
-    const history = [];
-    await model.fit(xs, ys, {
-      epochs,
-      callbacks: {
-        onEpochEnd: (epoch, logs) => {
-          history.push(logs.loss);
-          setLossHistory([...history]);
+      const history = [];
+      await model.fit(xs, ys, {
+        epochs,
+        callbacks: {
+          onEpochEnd: (epoch, logs) => {
+            history.push(logs.loss);
+            setLossHistory([...history]);
+          },
         },
-      },
-    });
+      });
 
-    // Generate test data and predictions
-    const testX = [];
-    const testY = [];
-    for (let i = 0; i < 200; i++) {
-      const x1 = (Math.random() - 0.5) * 10;
-      const x2 = (Math.random() - 0.5) * 10;
-      const x3 = (Math.random() - 0.5) * 10;
-      const output = Math.sin(x1) * Math.cos(x2) + x3 * 0.1;
-      testX.push([x1, x2, x3]);
-      testY.push(output > 0 ? 1 : 0);
+      // Generate test data and predictions
+      const testX = [];
+      const testY = [];
+      for (let i = 0; i < 200; i++) {
+        const x1 = (Math.random() - 0.5) * 10;
+        const x2 = (Math.random() - 0.5) * 10;
+        const x3 = (Math.random() - 0.5) * 10;
+        const output = Math.sin(x1) * Math.cos(x2) + x3 * 0.1;
+        testX.push([x1, x2, x3]);
+        testY.push(output > 0 ? 1 : 0);
+      }
+
+      predTensor = model.predict(tf.tensor2d(testX));
+      await predTensor.data();
+
+      setTrainingData(x.map((point, i) => ({ x: point[0], y: point[1], z: point[2], label: y[i] })));
+      setTestData(testX.map((point, i) => ({ x: point[0], y: point[1], z: point[2], label: testY[i] })));
+    } catch (err) {
+      console.error('Training error', err);
+    } finally {
+      try { if (xs) xs.dispose(); } catch(e) {}
+      try { if (ys) ys.dispose(); } catch(e) {}
+      try { if (predTensor && predTensor.dispose) predTensor.dispose(); } catch(e) {}
+      setIsTraining(false);
     }
-
-    const predTensor = model.predict(tf.tensor2d(testX));
-    await predTensor.data();
-
-    setTrainingData(x.map((point, i) => ({ x: point[0], y: point[1], z: point[2], label: y[i] })));
-    setTestData(testX.map((point, i) => ({ x: point[0], y: point[1], z: point[2], label: testY[i] })));
-
-    setIsTraining(false);
   };
 
   useEffect(() => {
@@ -129,6 +137,19 @@ const NeuralNetwork = () => {
     };
     initModel();
   }, [tf, learningRate, layers]);
+
+  // Dispose model on unmount to free TF memory
+  useEffect(() => {
+    return () => {
+      try {
+        if (model && typeof model.dispose === 'function') {
+          model.dispose();
+        }
+      } catch (e) {
+        // ignore
+      }
+    };
+  }, [model]);
 
   const lossChartData = {
     labels: lossHistory.map((_, i) => i + 1),
