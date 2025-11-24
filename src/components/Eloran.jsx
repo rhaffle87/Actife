@@ -361,7 +361,7 @@ export default function ELoranSimulator({ tileUrlTemplate = TILE_URL_TEMPLATE })
   }, [addMarker]);
 
   // --- e-Loran core: compute TDOA grid like Loran-C but apply ASF + diff corrections and DDS timing ---
-  function computeGrid(nx=200, ny=200) {
+  async function computeGrid(nx=200, ny=200) {
     if (masters.length === 0 || slaves.length === 0) { showToast('Add at least one master and one slave', 'error'); return; }
     // prepare grid bounds from station extents (EPSG:3857)
     const all = [...masters, ...slaves, ...receivers];
@@ -415,11 +415,74 @@ export default function ELoranSimulator({ tileUrlTemplate = TILE_URL_TEMPLATE })
     const mForWorker = mMeters.map(m => ({ x: m.x, y: m.y, lat: m.lat, lng: m.lng, clock: m.clock, diffCorrections: m.diffCorrections, offsetSec: 0, asfMeters: (typeof masters.find(mm=>mm.label===m.label)?.asfMap === 'number' ? masters.find(mm=>mm.label===m.label).asfMap : undefined) }));
     const sForWorker = sMeters.map(s => ({ x: s.x, y: s.y, lat: s.lat, lng: s.lng, clock: s.clock, diffCorrections: s.diffCorrections, offsetSec: s.offsetSec || 0, asfMeters: undefined }));
 
-    // if any master has a function asfMap, we cannot run it inside the worker (functions are not transferable)
+    // if any master has a function asfMap, pre-sample it into rasters so the grid worker never needs to eval functions
     const hasFunctionAsf = masters.some(m => m.asfMap && typeof m.asfMap === 'function');
-    // start or reuse worker
+
+    // helper to sample rasters for a function-based ASF using asfWorker
+    async function sampleAsfRastersForMasters(masterList) {
+      if (!asfWorkerRef.current) {
+        asfWorkerRef.current = new Worker(new URL('../workers/asfWorker.js', import.meta.url), { type: 'module' });
+      }
+      const aw = asfWorkerRef.current;
+
+      // prepare lat/lng arrays for every grid cell (cell centers) — reuse for all masters
+      const nxv = nx, nyv = ny;
+      const dx = (gridBounds.maxX - gridBounds.minX) / (nxv - 1);
+      const dy = (gridBounds.maxY - gridBounds.minY) / (nyv - 1);
+      const latArr = new Float64Array(nxv * nyv);
+      const lngArr = new Float64Array(nxv * nyv);
+      let idx = 0;
+      for (let j = 0; j < nyv; j++) {
+        const y = gridBounds.minY + j * dy;
+        for (let i = 0; i < nxv; i++, idx++) {
+          const x = gridBounds.minX + i * dx;
+          const [lngc, latc] = proj4('EPSG:3857','EPSG:4326',[x,y]);
+          latArr[idx] = latc; lngArr[idx] = lngc;
+        }
+      }
+
+      const rasters = Array(masterList.length).fill(null);
+
+      // sample each master sequentially (single worker instance)
+      for (let mi = 0; mi < masterList.length; mi++) {
+        const m = masterList[mi];
+        if (!m.asfMap || typeof m.asfMap !== 'function') continue;
+        const code = 'return (' + m.asfMap.toString() + ')(lat,lng);';
+        // await single sampleBatch call
+        const result = await new Promise((resolve, reject) => {
+          const onmsg = (ev) => {
+            const mm = ev.data;
+            if (!mm) return;
+            if (mm.type === 'result' && mm.payload && mm.payload.buffer) {
+              aw.removeEventListener('message', onmsg);
+              const arr = new Float32Array(mm.payload.buffer);
+              resolve(arr);
+            } else if (mm.type === 'error') {
+              aw.removeEventListener('message', onmsg);
+              reject(new Error(mm.payload && mm.payload.message ? mm.payload.message : 'ASF sampling error'));
+            }
+          };
+          aw.addEventListener('message', onmsg);
+          // send lat/lng arrays (do NOT transfer them so they can be reused)
+          try {
+            aw.postMessage({ type: 'sampleBatch', payload: { code, lats: latArr, lngs: lngArr, nx: nxv, ny: nyv } });
+          } catch (err) {
+            aw.removeEventListener('message', onmsg);
+            reject(err);
+          }
+          // timeout
+          setTimeout(() => { aw.removeEventListener('message', onmsg); reject(new Error('ASF sampling timeout')); }, 10000);
+        }).catch((err) => {
+          console.warn('ASF sampling failed for master', m.label, err);
+          return null;
+        });
+        rasters[mi] = result; // may be null on failure
+      }
+      return rasters;
+    }
+
+    // start or reuse grid worker
     try {
-      if (hasFunctionAsf) throw new Error('Masters with function ASF present; falling back to main-thread compute');
       if (!workerRef.current) {
         workerRef.current = new Worker(new URL('../workers/gridWorker.js', import.meta.url), { type: 'module' });
       }
@@ -437,8 +500,19 @@ export default function ELoranSimulator({ tileUrlTemplate = TILE_URL_TEMPLATE })
               drawLOPs(contours);
           }
       };
-      // post message; transfer buffers not yet allocated here
-      w.postMessage({ type: 'computeGrid', payload: { mMeters: mForWorker, sMeters: sForWorker, gridBounds, nx, ny, simTimeSec: simTimeRef.current } });
+
+      // if function ASFs exist, pre-sample them into rasters and include them in payload
+      let asfRasters = null;
+      if (hasFunctionAsf) {
+        const ras = await sampleAsfRastersForMasters(mMeters);
+        // convert to ArrayBuffer list (null where not present)
+        asfRasters = ras.map(a => a ? a.buffer : null);
+      }
+
+      // prepare transfer list with asf rasters (if any)
+      const transfer = [];
+      if (asfRasters) asfRasters.forEach(b => { if (b) transfer.push(b); });
+      w.postMessage({ type: 'computeGrid', payload: { mMeters: mForWorker, sMeters: sForWorker, gridBounds, nx, ny, simTimeSec: simTimeRef.current, asfRasters } }, transfer);
       return;
     } catch (err) {
       // fallback to synchronous compute if worker fails

@@ -89,13 +89,16 @@ function marchingSquaresZero(xs, ys, grid, nx, ny, gridBounds) {
 self.onmessage = function(e) {
   const msg = e.data;
   if (!msg || msg.type !== 'computeGrid') return;
-  const { mMeters, sMeters, gridBounds, nx, ny, simTimeSec } = msg.payload;
+  const { mMeters, sMeters, gridBounds, nx, ny, simTimeSec, asfRasters } = msg.payload;
   const nxv = nx, nyv = ny;
   const dx = (gridBounds.maxX - gridBounds.minX) / (nxv - 1);
   const dy = (gridBounds.maxY - gridBounds.minY) / (nyv - 1);
 
   const maps = [];
   const contours = [];
+
+  // prepare asf raster arrays if provided (parallel to mMeters)
+  const asfArrays = (asfRasters && Array.isArray(asfRasters)) ? asfRasters.map(buf => buf ? new Float32Array(buf) : null) : Array(mMeters.length).fill(null);
 
   for (let mi=0; mi<mMeters.length; mi++){
     for (let si=0; si<sMeters.length; si++){
@@ -113,9 +116,19 @@ self.onmessage = function(e) {
         const y = gridBounds.minY + j*dy;
         for (let i=0;i<nxv;i++, idx++){
           const x = gridBounds.minX + i*dx;
-          // compute arrival seconds using local function; note: station.asfMeters can be set before posting
-          const arrivalM = computeArrivalSecLocal(mMeters[mi], x, y, simTimeSec);
-          const arrivalS = computeArrivalSecLocal(sMeters[si], x, y, simTimeSec);
+          // compute per-station ASF meters from raster if available, otherwise use station.asfMeters
+          let asfM = 0;
+          if (asfArrays[mi]) asfM = asfArrays[mi][idx] || 0;
+          else if (mMeters[mi].asfMeters !== undefined) asfM = mMeters[mi].asfMeters || 0;
+          let asfS = 0;
+          if (asfArrays[si]) asfS = asfArrays[si][idx] || 0;
+          else if (sMeters[si].asfMeters !== undefined) asfS = sMeters[si].asfMeters || 0;
+
+          // compute arrival seconds using local geometry and provided ASF per-point
+          const distM = (mMeters[mi].lat !== undefined && mMeters[mi].lng !== undefined) ? haversineMeters({lat:mMeters[mi].lat,lng:mMeters[mi].lng}, {x,y}) : Math.hypot(mMeters[mi].x - x, mMeters[mi].y - y);
+          const distS = (sMeters[si].lat !== undefined && sMeters[si].lng !== undefined) ? haversineMeters({lat:sMeters[si].lat,lng:sMeters[si].lng}, {x,y}) : Math.hypot(sMeters[si].x - x, sMeters[si].y - y);
+          const arrivalM = (distM / C) + (mMeters[mi].offsetSec || 0) + simulateClockTick(mMeters[mi].clock || {biasSec:0,driftPerSec:0}, simTimeSec) + (asfM - (mMeters[mi].diffCorrections && mMeters[mi].diffCorrections.enabled ? (mMeters[mi].diffCorrections.avgMeters||0) : 0)) / C;
+          const arrivalS = (distS / C) + (sMeters[si].offsetSec || 0) + simulateClockTick(sMeters[si].clock || {biasSec:0,driftPerSec:0}, simTimeSec) + (asfS - (sMeters[si].diffCorrections && sMeters[si].diffCorrections.enabled ? (sMeters[si].diffCorrections.avgMeters||0) : 0)) / C;
           // remove pair constant clock/offset so contours are based on geometric + ASF/diff variations
           grid[idx] = (arrivalS - arrivalM) - pairConstSec; // seconds
         }

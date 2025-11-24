@@ -4,6 +4,7 @@ import Navbar from './components/Navbar'
 import Home from './components/Home'
 import Tutorials from './components/Tutorials'
 import Credits from './components/Credits'
+import ErrorBoundary from './components/ErrorBoundary'
 
 const NeuralNetwork = lazy(() => import('./components/NeuralNetwork'))
 const ImageProcessing = lazy(() => import('./components/ImageProcessing'))
@@ -61,6 +62,7 @@ function App() {
 
       {/* Main landmark for primary page content */}
       <main id="main-content" role="main" className="grow">
+        <ErrorBoundary>
         <Suspense fallback={<div className="p-8 text-center text-gray-600">Loading...</div>}>
           <Routes>
             <Route path="/" element={<Home />} />
@@ -77,6 +79,7 @@ function App() {
             <Route path="/credits" element={<Credits />} />
           </Routes>
         </Suspense>
+        </ErrorBoundary>
       </main>
 
       {/* Optional footer landmark */}
